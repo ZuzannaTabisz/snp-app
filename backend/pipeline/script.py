@@ -2,6 +2,9 @@ import argparse
 import pandas as pd
 import subprocess
 import os
+import numpy as np
+import scipy.stats as stats
+
 
 
 def generate_mutations(sequence):
@@ -46,7 +49,19 @@ def main():
     sequences_directory = args.path
     script_directory = os.getcwd()
     os.chdir(sequences_directory)
+    ten_best = {
+        'no':{},
+        'seq': {},
+        'score':{}
+    }
+    arr_pdist=[]
+    arr_distance=[]
+    arr_seq=[]
+    arr_pdist = np.array(arr_pdist)
+    arr_distance = np.array(arr_distance)
+    arr_seq=np.array(arr_seq)
 
+    ten_best=pd.DataFrame(ten_best)
     results = []
 
     with open("wt.txt", 'r') as f:
@@ -110,6 +125,25 @@ def main():
             "RNAdistance_Result": rnadistance_output
         }
         results.append(result_row)
+
+        arr_pdist = np.append(arr_pdist, float(rnapdist_output))
+        arr_distance = np.append(arr_distance, float(rnadistance_result[1]))
+        arr_seq=np.append(arr_seq, mutation)
+
+    arr_pdist=stats.zscore(arr_pdist)
+    arr_distance=stats.zscore(arr_distance)
+
+    print(arr_distance)
+    print(arr_pdist)
+    for elem, arr in enumerate(arr_distance, start=0):
+        sum=arr_distance[elem] + arr_pdist[elem]
+        new_row = {'no': elem, 'seq': arr_seq[elem], 'score': sum}
+        ten_best.loc[len(ten_best)]= new_row
+
+    ten_best = ten_best.sort_values(by='score', ascending=False)
+    ten_best=ten_best.head(10)
+    ten_best.to_csv("ten_best_results.csv", index=False)
+    print (ten_best)
 
     results_df = pd.DataFrame(results)
     output_csv_path = os.path.join(sequences_directory, "mutation_results.csv")
