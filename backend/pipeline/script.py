@@ -127,7 +127,7 @@ def main():
         results.append(result_row)
 
         arr_pdist = np.append(arr_pdist, float(rnapdist_output))
-        arr_distance = np.append(arr_distance, float(rnadistance_result[1]))
+        arr_distance = np.append(arr_distance, float(rnadistance_output[1]))
         arr_seq=np.append(arr_seq, mutation)
 
     arr_pdist=stats.zscore(arr_pdist)
