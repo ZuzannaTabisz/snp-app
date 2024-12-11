@@ -9,3 +9,4 @@ flask-socketio
 pandas
 graphviz
 requests
+scipy
