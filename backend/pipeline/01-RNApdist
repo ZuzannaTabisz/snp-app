@@ -1,0 +1,4 @@
+#! /bin/bash
+
+set -x 
+cat wt.txt mut.txt | RNApdist > "RNApdist-result.txt"

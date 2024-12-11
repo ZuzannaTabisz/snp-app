@@ -1,0 +1,8 @@
+#! /bin/bash
+
+SCRIPT_DIR=$(dirname "$0")
+
+wt=$(cat wt-dotbracket.txt | awk 'NR == 2 { print $1 }')
+mut=$(cat mut-dotbracket.txt | awk 'NR == 2 { print $1 }')
+echo -e "${wt}\n${mut}" | RNAdistance --distance=fhwcFHWCP --backtrack=RNAdistance-backtrack.txt > RNAdistance-result.txt
+

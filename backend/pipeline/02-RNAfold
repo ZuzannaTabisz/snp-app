@@ -1,0 +1,4 @@
+#! /bin/bash
+
+RNAfold < wt.txt > wt-dotbracket.txt
+RNAfold < mut.txt > mut-dotbracket.txt

@@ -1,0 +1,95 @@
+#!/bin/bash
+
+
+CURRENT_DIR=$(pwd)
+
+SCRIPT_DIR=$(dirname "$0")
+
+
+chmod +x "$SCRIPT_DIR/99-find-differences"
+chmod +x "$SCRIPT_DIR/98-find-domains"
+chmod -R 775 "$SCRIPT_DIR/98-find-domains"
+
+
+echo "?----------------------------------"
+echo "Aktualna zawartość katalogu $CURRENT_DIR:"
+ls -l "$CURRENT_DIR"
+echo "-----------------------------------"
+
+
+
+
+
+
+function plot {
+    echo $1 $2
+    #generating visualization
+    RNAplot --layout 4 --post "$("$SCRIPT_DIR/99-find-differences" $1 $2 | awk 'NR == 1')" < $1
+    #modifying post scirpt - color change
+    sed -i \
+        -e '/^\/outlinecolor/ c /outlinecolor {0.7 setgray} bind def' \
+        -e '/fsize 2 div 0/ c fsize 2 div 0 360 arc gsave stroke grestore fill' \
+        rna.eps
+    #conversion
+    epstopdf rna.eps
+    pdf2svg rna.pdf "${1%.txt}.svg"
+    svgo "${1%.txt}.svg"
+    rm rna.eps rna.pdf
+
+
+    echo "??----------------------------------"
+    echo "Aktualna zawartość katalogu $CURRENT_DIR:"
+    ls -l "$CURRENT_DIR"
+    echo "-----------------------------------"
+
+
+    #same process for mut
+    RNAplot --layout 4 --post "$("$SCRIPT_DIR/99-find-differences" $1 $2 | awk 'NR == 2')" < $2
+
+
+    echo "*??----------------------------------"
+    echo "Aktualna zawartość katalogu $CURRENT_DIR:"
+    ls -l "$CURRENT_DIR"
+    echo "-----------------------------------"
+
+
+    sed -i \
+        -e '/^\/outlinecolor/ c /outlinecolor {0.7 setgray} bind def' \
+        -e '/fsize 2 div 0/ c fsize 2 div 0 360 arc gsave stroke grestore fill' \
+        rna.eps
+    epstopdf rna.eps
+    pdf2svg rna.pdf "${2%.txt}.svg"
+    svgo "${2%.txt}.svg"
+    rm rna.eps rna.pdf
+}
+
+
+
+
+plot wt-dotbracket.txt mut-dotbracket.txt
+
+
+
+
+"$SCRIPT_DIR/98-find-domains" "wt-dotbracket.txt" "mut-dotbracket.txt"
+
+
+for wt in wt-dotbracket-*.txt; do
+    domain_wt=($(echo "${wt##*/}" | sed -E 's/.+-([0-9]+)-([0-9]+).+/\1 \2/g'))
+    min_err=1000000
+
+
+    for mut in mut-dotbracket-*.txt; do
+        domain_mut=($(echo "${mut##*/}" | sed -E 's/.+-([0-9]+)-([0-9]+).+/\1 \2/g'))
+        err=$(echo "scale=0; sqrt((${domain_wt[0]}-${domain_mut[0]})^2 + (${domain_wt[1]}-${domain_mut[1]})^2)" | bc -l)
+        if [[ ${err} -lt ${min_err} ]]; then
+            min_err=${err}
+            min_mut=${mut}
+        fi
+    done
+
+
+    if ! diff -q "$wt" "$min_mut"; then
+        plot "${wt##*/}" "${min_mut##*/}"
+    fi
+done

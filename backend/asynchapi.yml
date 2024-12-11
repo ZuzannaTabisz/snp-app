@@ -1,0 +1,282 @@
+asyncapi: 3.0.0
+info:
+  title: API for SNP RNA Sequence Analysis
+  version: '1.0.0'
+  description: |
+    API for RNA sequence analysis and retrieving results in TXT and SVG format.
+
+servers:
+  websocket:
+    protocol: wss
+    host: ws://api.snp-rna-analysis.com/ws # Example placeholder adresses
+  rest:
+    host: api.snp-rna-analysis.com
+    protocol: https
+channels:
+  analyzeTwoSequence:
+    address: '/api/analyze/two-sequence'
+    messages:
+      analyzeTwoSequenceRequest:
+        name: AnalyzeTwoSequenceRequest
+        payload:
+          type: object
+          properties:
+            sequence_wt:
+              type: string
+              description: RNA "wild type" sequence (original).
+            sequence_mt:
+              type: string
+              description: RNA "mutant" sequence.
+            snp_id:
+              type: string
+              description: Optional SNP identifier from dbSNP.
+      analyzeTwoSequenceResponse:
+        name: AnalyzeTwoSequenceResponse
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+            status:
+              type: string
+              description: Current analysis status (e.g., "in_progress").
+            url:
+              type: string
+              description: Link to analysis results.
+        description: |
+          Errors:
+          - **400**: Invalid input data.
+          - **404**: SNP sequences not found (for dbSNP).
+          - **500**: Server error while submitting analysis.
+  analyzeOneSequence:
+    address: '/api/analyze/one-sequence'
+    messages:
+      analyzeOneSequenceRequest:
+        name: AnalyzeOneSequenceRequest
+        payload:
+          type: object
+          properties:
+            sequence:
+              type: string
+              description: RNA sequence for analysis.
+      analyzeOneSequenceResponse:
+        name: AnalyzeOneSequenceResponse
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+            status:
+              type: string
+              description: Current analysis status (e.g., "in_progress").
+            url:
+              type: string
+              description: Link to analysis results.
+        description: |
+          Errors:
+          - **400**: Invalid input data (e.g., incorrect sequence format).
+          - **500**: Server error while submitting analysis.
+  getResults:
+    address: '/api/results/{analysis_id}'
+    messages:
+      getResultsRequest:
+        name: GetResultsRequest
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+      getResultsResponse:
+        name: GetResultsResponse
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+            results:
+              type: object
+              properties:
+                RNApdist:
+                  type: number
+                  description: RNApdist result.
+                RNAdistance:
+                  type: object
+                  properties:
+                    f:
+                      type: number
+                    h:
+                      type: number
+                    w:
+                      type: number
+                    c:
+                      type: number
+                    F:
+                      type: number
+                    H:
+                      type: number
+                    W:
+                      type: number
+                    C:
+                      type: number
+                    P:
+                      type: number
+                RNAfold:
+                  type: object
+                  properties:
+                    wt-dotbracket:
+                      type: string
+                      description: Wild type structure in dot-bracket notation.
+                    mut-dotbracket:
+                      type: string
+                      description: Mutant structure in dot-bracket notation.
+                RNAplot:
+                  type: object
+                  properties:
+                    wt-svg:
+                      type: string
+                      description: Link to wild type RNAplot visualization in SVG format.
+                    mut-svg:
+                      type: string
+                      description: Link to mutant RNAplot visualization in SVG format.
+                HIT_tree:
+                  type: object
+                  properties:
+                    tree:
+                      type: string
+                      description: Link to HIT tree visualization on SVG format.
+                SNP_variants:
+                  type: object
+                  properties:
+                    variantsfile:
+                      type: string
+                      description: Link to download SNP variants file.
+                status:
+                  type: string
+                  description: Current analysis status.
+        description: |
+          Errors:
+          - **404**: Analysis results not found.
+          - **500**: Server error while retrieving results.
+  downloadZip:
+    address: '/api/results/{analysis_id}/zip-download'
+    messages:
+      downloadZipRequest:
+        name: DownloadZipRequest
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+      downloadZipResponse:
+        name: DownloadZipResponse
+        payload:
+          type: string
+          description: Zip file containing all analysis results.
+        description: |
+          Errors:
+          - **404**: Zip file not found for the given analysis identifier.
+          - **500**: Server error while generating the ZIP file.
+  hitTree:
+    address: '/api/results/{analysis_id}/hit-tree'
+    messages:
+      hitTreeRequest:
+        name: HitTreeRequest
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+      hitTreeResponse:
+        name: HitTreeResponse
+        payload:
+          type: string
+          description: SVG visualization of the HIT tree.
+        description: |
+          Errors:
+          - **404**: HIT tree not found for the given analysis identifier.
+          - **500**: Server error while retrieving the HIT tree.
+  rnaPlotWildType:
+    address: '/api/results/{analysis_id}/rna-plot-wt'
+    messages:
+      rnaPlotWildTypeRequest:
+        name: RnaPlotWildTypeRequest
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+      rnaPlotWildTypeResponse:
+        name: RnaPlotWildTypeResponse
+        payload:
+          type: string
+          description: SVG visualization of RNAplot for wild type.
+        description: |
+          Errors:
+          - **404**: RNAplot structure for wild type not found for the given analysis identifier.
+          - **500**: Server error while retrieving RNAplot structure.
+  rnaPlotMutant:
+    address: '/api/results/{analysis_id}/rna-plot-mut'
+    messages:
+      rnaPlotMutantRequest:
+        name: RnaPlotMutantRequest
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+      rnaPlotMutantResponse:
+        name: RnaPlotMutantResponse
+        payload:
+          type: string
+          description: SVG visualization of RNAplot for mutant.
+        description: |
+          Errors:
+          - **404**: RNAplot structure for mutant not found for the given analysis identifier.
+          - **500**: Server error while retrieving RNAplot structure.
+  statusUpdate:
+    address: '/ws/status'
+    messages:
+      statusUpdateRequest:
+        name: StatusUpdateRequest
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+      statusUpdateResponse:
+        name: StatusUpdateResponse
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+            status:
+              type: string
+              description: Current analysis status (e.g., "in_progress").
+            progress:
+              type: integer
+              description: Progress of the analysis (in %).
+        description: |
+          Errors:
+          - **400**: Missing or invalid analysis identifier.
+          - **500**: Server error.

@@ -1,0 +1,273 @@
+openapi: 3.1.0
+info:
+  title: RNA Analysis API
+  version: 1.0.0
+  description: API do analizy sekwencji RNA oraz pobierania wyników w formacie SVG.
+
+paths:
+  /api/analyze/two-sequence:
+    post:
+      summary: Zlecenie analizy sekwencji wild type i mutant
+      description: Zlecenie analizy porównawczej sekwencji RNA wild type i mutant.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sequence_wt:
+                  type: string
+                  description: Sekwencja RNA wild type (oryginalna).
+                sequence_mt:
+                  type: string
+                  description: Sekwencja RNA mutant.
+                snp_id:
+                  type: string
+                  description: Opcjonalny identyfikator SNP.
+              required:
+                - sequence_wt
+                - sequence_mt
+      responses:
+        '200':
+          description: Zlecenie analizy przyjęte.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysis_id:
+                    type: string
+                    description: Unikalny identyfikator analizy.
+                  status:
+                    type: string
+                    description: Status analizy.
+                  url:
+                    type: string
+                    description: Link do wyników analizy.
+        '400':
+          description: Błędne dane wejściowe.
+        '500':
+          description: Błąd serwera.
+
+  /api/analyze/one-sequence:
+    post:
+      summary: Zlecenie analizy pojedynczej sekwencji
+      description: Zlecenie analizy dla jednej sekwencji RNA, analizujące możliwe SNP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sequence:
+                  type: string
+                  description: Sekwencja RNA do analizy.
+              required:
+                - sequence
+      responses:
+        '200':
+          description: Zlecenie analizy przyjęte.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysis_id:
+                    type: string
+                    description: Unikalny identyfikator analizy.
+                  status:
+                    type: string
+                    description: Status analizy.
+                  url:
+                    type: string
+                    description: Link do wyników analizy.
+        '400':
+          description: Błędne dane wejściowe.
+        '500':
+          description: Błąd serwera.
+
+  /api/results/{analysis_id}:
+    get:
+      summary: Pobranie wyników analizy
+      description: Pobranie wyników analizy dla danego identyfikatora.
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unikalny identyfikator analizy.
+      responses:
+        '200':
+          description: Wyniki analizy pobrane.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysis_id:
+                    type: string
+                    description: Unikalny identyfikator analizy.
+                  results:
+                    type: object
+                    properties:
+                      RNApdist:
+                        type: number
+                        description: Wynik RNApdist.
+                      RNAdistance:
+                        type: object
+                        properties:
+                          f:
+                            type: number
+                          h:
+                            type: number
+                          w:
+                            type: number
+                          c:
+                            type: number
+                          F:
+                            type: number
+                          H:
+                            type: number
+                          W:
+                            type: number
+                          C:
+                            type: number
+                          P:
+                            type: number
+                      RNAfold:
+                        type: object
+                        properties:
+                          wt-dotbracket:
+                            type: string
+                          mut-dotbracket:
+                            type: string
+                      RNAplot:
+                        type: object
+                        properties:
+                          wt-svg:
+                            type: string
+                            description: Link do SVG wild type.
+                          mut-svg:
+                            type: string
+                            description: Link do SVG mutant.
+                      HIT tree:
+                        type: object
+                        properties:
+                          tree:
+                            type: string
+                            description: Link do drzewa HIT.
+                      SNP variants:
+                        type: object
+                        properties:
+                          variantsfile:
+                            type: string
+                            description: Link do pliku z wariantami SNP.
+                      status:
+                        type: string
+                        description: Status analizy.
+        '404':
+          description: Wyniki analizy nie znalezione.
+        '500':
+          description: Błąd serwera.
+
+  /api/results/{analysis_id}/download:
+    get:
+      summary: Pobranie pliku ZIP z wynikami analizy
+      description: Umożliwia pobranie pliku ZIP zawierającego wyniki analizy.
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unikalny identyfikator analizy.
+      responses:
+        '200':
+          description: Plik ZIP pobrany.
+          content:
+            application/zip: {}
+        '404':
+          description: Plik ZIP nie znaleziony.
+        '500':
+          description: Błąd serwera.
+
+  /api/results/{analysis_id}/hit-tree:
+    get:
+      summary: Pobranie drzewa HIT w formacie SVG
+      description: Umożliwia pobranie drzewa HIT w formacie SVG.
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unikalny identyfikator analizy.
+      responses:
+        '200':
+          description: Drzewo HIT pobrane.
+          content:
+            image/svg+xml: {}
+        '404':
+          description: Drzewo HIT nie znalezione.
+        '500':
+          description: Błąd serwera.
+
+  /api/results/{analysis_id}/rna-plot-wt:
+    get:
+      summary: Pobranie struktury RNAplot dla wild type
+      description: Umożliwia pobranie struktury RNAplot dla sekwencji wild type w formacie SVG.
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unikalny identyfikator analizy.
+      responses:
+        '200':
+          description: Struktura wild type pobrana.
+          content:
+            image/svg+xml: {}
+        '404':
+          description: Struktura RNAplot dla wild type nie znaleziona.
+        '500':
+          description: Błąd serwera.
+
+  /api/results/{analysis_id}/rna-plot-mut:
+    get:
+      summary: Pobranie struktury RNAplot dla mutant
+      description: Umożliwia pobranie struktury RNAplot dla sekwencji mutant w formacie SVG.
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unikalny identyfikator analizy.
+      responses:
+        '200':
+          description: Struktura mutant pobrana.
+          content:
+            image/svg+xml: {}
+        '404':
+          description: Struktura RNAplot dla mutant nie znaleziona.
+        '500':
+          description: Błąd serwera.
+
+components:
+  schemas:
+    Analysis:
+      type: object
+      properties:
+        analysis_id:
+          type: string
+          description: Unikalny identyfikator analizy.
+        status:
+          type: string
+          description: Status analizy.
+        url:
+          type: string
+          description: Link do wyników analizy.

@@ -1,0 +1,26 @@
+# Requirements
+
+- AWK (`awk`)
+- ViennaRNA (`RNApdist`, `RNAfold`, `RNAdistance`, `RNAplot`)
+- Ghostscript (`eps2eps`)
+- Texlive (`epstopdf`)
+- pdf2svg (`pdf2svg`)
+- svgo (`svgo`)
+
+# Running
+
+1. Create a new directory and change into it
+2. Put wild-type sequence in wt.txt and mutant in mut.txt
+3. Execute `01-RNApdist`
+4. Execute `02-RNAfold`
+5. Execute `03-RNAdistance`
+6. Execute `04-RNAplot`
+
+# Results
+
+- `RNApdist-result.txt`: distance computed by RNApdist
+- `wt-dotbracket.txt` and `mut-dotbracket.txt`: 2D structure predicted by RNAfold
+- `RNAdistance-result.txt`: nine distances computer by RNAdistance using various methods
+- `RNAdistance-backtrack.txt`: backtracking of RNAdistance showing where the differences are
+- `mut-dotbracket.svg`: 2D structure visualization displaying in red the modified nucleotides
+- `wt-dotbracket.svg`: 2D structure visualization displaying in blue the modified nucleotides
