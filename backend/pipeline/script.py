@@ -111,7 +111,7 @@ def main():
         rnadistance_result_path = os.path.join(sequences_directory, "RNAdistance-result.txt")
         if os.path.exists(rnadistance_result_path):
             with open(rnadistance_result_path) as f:
-                rnadistance_output = f.read().strip()
+                rnadistance_output = f.read().split()
         else:
             rnadistance_output = "Error: RNAdistance-result.txt not found."
 
