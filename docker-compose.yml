@@ -6,7 +6,8 @@ services:
     restart: always
     ports:
       - 8081:80
-
+    networks:
+      - backend
 
   db:
     container_name: mysql
@@ -16,12 +17,16 @@ services:
       MYSQL_ROOT_PASSWORD: qwas
     ports:
       - "3306:3306"
-
+    networks:
+      - backend
     volumes:
       - db-vol:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
   backend:
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     container_name: backend_snp
     restart: always
     build:
@@ -34,7 +39,13 @@ services:
       - MYSQL_DATABASE=snp
       - MYSQL_USER=root
       - MYSQL_PASSWORD=qwas
-
+    networks:
+      - backend
+    extra_hosts:
+    #with nslookup
+      - "clinicaltables.nlm.nih.gov:130.14.65.58"  # IPv4 address
+      - "lforms-service-wip.lhcaws.nlm.nih.gov:130.14.65.58"  # Same address for alias
+    
     depends_on:
       - db
 
@@ -44,16 +55,16 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-
+    networks:
+      - backend
     ports:
       - "3000:3000"
     depends_on:
       - backend
 
 networks:
-  default:
+  backend:
     driver: bridge
-
 
 volumes:
   db-vol:

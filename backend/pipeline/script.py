@@ -113,7 +113,7 @@ def main():
         rnadistance_result_path = os.path.join(sequences_directory, "RNAdistance-result.txt")
         if os.path.exists(rnadistance_result_path):
             with open(rnadistance_result_path) as f:
-                rnadistance_output = f.read().strip()
+                rnadistance_output = f.read().strip().split()
         else:
             rnadistance_output = "Error: RNAdistance-result.txt not found."
 
@@ -129,8 +129,8 @@ def main():
         results.append(result_row)
 
         arr_pdist = np.append(arr_pdist, float(rnapdist_output))
-        logger.debug(f"RNAdist[1]{rnadistance_output[2]}")
-        arr_distance = np.append(arr_distance, float(rnadistance_output[2]))
+        logger.debug(f"RNAdist[1]{rnadistance_output[1]}")
+        arr_distance = np.append(arr_distance, float(rnadistance_output[1]))
         
         arr_seq=np.append(arr_seq, mutation)
         
