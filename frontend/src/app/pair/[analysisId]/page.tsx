@@ -18,9 +18,11 @@ const AnalysisPage = () => {
   const [svgTreeUrlMut, setTreeSvgUrlMut] = useState<string | null>(null);
   const [svgTreeUrlWt, setTreeSvgUrlWt] = useState<string | null>(null);
   const [combinedText, setCombinedText] = useState<string | null>(null);
-  const mutantSequence = localStorage.getItem('mutantSequence');
-  const wildSequence = localStorage.getItem('wildSequence');
-
+  const [mutantSequence, setMutantSequence] = useState(localStorage.getItem('mutantSequence') || "");
+  const [wildSequence, setWildSequence] = useState(localStorage.getItem('wildSequence') || "");
+  //clear localStorage
+  localStorage.removeItem("mutantSequence");
+  localStorage.removeItem("wildSequence");
   
   const fetchResults = useCallback(async () => {
     try {
@@ -70,7 +72,7 @@ const AnalysisPage = () => {
   }, [analysisId]);
 
   
-  useEffect(() => {
+  useEffect(() => { // useeffect is called only after mounting a component
     const socket = io(`http://localhost:8080/${analysisId}`, {
       transports: ["websocket"],
       autoConnect: true,

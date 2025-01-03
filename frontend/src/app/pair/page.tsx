@@ -1,5 +1,5 @@
-"use client";
-import React, { useState, useEffect } from "react";
+"use client"; //rendering on the client's side - must have for hooks like useState
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 
@@ -10,11 +10,6 @@ const PairPage = () => {
   const [error, setError] = useState("");
   const [fetchDbSnp, setFetchDbSnp] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    setMutantSequence(localStorage.getItem('mutantSequence') || "");
-    setWildSequence(localStorage.getItem('wildSequence') || "");
-  }, []);
 
   const isValidSequence = (sequence: string) => /^[ACGUTacgut]+$/.test(sequence);
 
@@ -92,6 +87,7 @@ const PairPage = () => {
 
       const data = await response.json();
       setWildSequence(data.sequence);
+      // to chceck if is filled
       setFetchDbSnp(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -119,6 +115,8 @@ const PairPage = () => {
         body: JSON.stringify({ mutantSequence, wildSequence }),
       });
 
+      
+
       if (!response.ok) throw new Error("Failed to start analysis");
 
       const responseData = await response.json();
@@ -133,7 +131,7 @@ const PairPage = () => {
   return (
     <div className="relative z-10 rounded-sm bg-white p-8 shadow-three dark:bg-gray-dark sm:p-11 lg:p-8 xl:p-11">
       <h3 className="mb-4 text-2xl font-bold leading-tight text-black dark:text-white mt-24">
-        Search RNA Sequence
+        RNA Sequence Analysis
       </h3>
       <p className="mb-11 border-b border-body-color border-opacity-25 pb-11 text-base leading-relaxed text-body-color dark:border-white dark:border-opacity-25">
         Please enter your RNA sequence for analysis.
@@ -149,12 +147,24 @@ const PairPage = () => {
           onChange={(e) => handleInputChange(e, setMutantSequence)}
         />
         <input
+          type="file"
+          accept=".fasta,.txt"
+          className="mb-4 w-full text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
+          onChange={(e) => handleFileUpload(e, setMutantSequence)}
+        />
+        <input
           type="text"
           name="wildSequence"
           placeholder="Enter Wild-type RNA Sequence"
           className="border-stroke mb-4 w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
           value={wildSequence}
           onChange={(e) => handleInputChange(e, setWildSequence)}
+        />
+        <input
+          type="file"
+          accept=".fasta,.txt"
+          className="mb-4 w-full text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
+          onChange={(e) => handleFileUpload(e, setWildSequence)}
         />
         <input
           type="text"
@@ -164,18 +174,7 @@ const PairPage = () => {
           value={dbSnpId}
           onChange={(e) => setDbSnpId(e.target.value)}
         />
-        <input
-          type="file"
-          accept=".fasta,.txt"
-          className="mb-4 w-full text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
-          onChange={(e) => handleFileUpload(e, setMutantSequence)}
-        />
-        <input
-          type="submit"
-          value="Submit"
-          className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm bg-primary px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 dark:shadow-submit-dark"
-          onClick={handleSubmit}
-        />
+        
         <button
           type="button"
           className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm bg-secondary px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 dark:shadow-submit-dark"
@@ -183,11 +182,15 @@ const PairPage = () => {
         >
           Search dbSNP
         </button>
-      </div>
 
-      <p className="text-center text-base leading-relaxed text-body-color dark:text-body-color-dark">
-        Your sequence will be analyzed for relevant patterns.
-      </p>
+        <input
+          type="submit"
+          value="Submit"
+          className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm bg-primary px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 dark:shadow-submit-dark"
+          onClick={handleSubmit}
+        />
+        
+      </div>
     </div>
   );
 };

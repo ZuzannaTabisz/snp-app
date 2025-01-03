@@ -175,5 +175,5 @@ graph2.node("R1", "R1", color="black", fillcolor="green", style="filled", shape=
 add_edges(graph2, tree_list2, "R1", "R1", common_positions, common_position_labels, pos_dict2, key_usage_count2, is_root=True)
 
 # save the graphs as SVG files
-graph1.render(os.path.join('tree_wt'), format='svg')
-graph2.render(os.path.join('tree_mut'), format='svg')
+graph1.render(os.path.join('tree_mut'), format='svg')
+graph2.render(os.path.join('tree_wt'), format='svg')

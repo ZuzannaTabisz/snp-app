@@ -18,9 +18,6 @@ echo "-----------------------------------"
 
 
 
-
-
-
 function plot {
     echo $1 $2
     #generating visualization

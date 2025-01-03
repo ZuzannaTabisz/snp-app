@@ -10,6 +10,9 @@ RUN npm install
 
 RUN npm install socket.io-client@latest
 RUN npm install @types/socket.io-client
+#dodac to do package json
+
+
 
 
 COPY . .

@@ -1,8 +1,5 @@
 "use client";
 
-//import Link from 'next/link';
-//import Image from 'next/image';
-
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -13,13 +10,31 @@ interface TaskStatus {
   status: string;
 }
 
+export interface DataRow {
+  no: number;
+  Mutation: string;
+  RNApdist: number;
+  'RNAdistance(f)': number;
+  'Z-score': number;
+}
+
+interface CombinedText {
+  columns: string[];
+  rows: DataRow[];
+}
+
 const AnalysisResults = () => {
   const { analysisId } = useParams();
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState<string>("");
+  const [error, setError] = useState<string>("");
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-  const [combinedText, setCombinedText] = useState<string | null>(null);
-  const wildSequence = localStorage.getItem('wildSequence');
+  const [combinedText, setCombinedText] = useState<CombinedText | null>(null);
+  const [wildSequence, setWildSequence] = useState(localStorage.getItem('wildSequence') || "");
+  //clear localStorage
+  localStorage.removeItem("wildSequence");
+  
+  const { theme } = useTheme();
+
   useEffect(() => {
     const socket = io(`http://localhost:8080/${analysisId}`, {
       transports: ["websocket"],
@@ -39,38 +54,23 @@ const AnalysisResults = () => {
     });
 
     return () => {
-      
       socket.disconnect();
-      
     };
   }, [analysisId]);
 
-
-  useEffect(() => {
-    if (message === "Analysis completed") {
-      fetchResults();
-      fetchResultsZIP();
-    }
-  }, [message, analysisId]);
-
-
   const fetchResults = useCallback(async () => {
     try {
-        console.log("Fetching results...");
-        const response = await fetch(`http://localhost:8080/api/results/single/${analysisId}`);
-        if (!response.ok) throw new Error("Failed to fetch combined text");
+      console.log("Fetching results...");
+      const response = await fetch(`http://localhost:8080/api/results/single/${analysisId}`);
+      if (!response.ok) throw new Error("Failed to fetch combined text");
 
-        const data = await response.json();
-        console.log("Fetched results:", data);
-        if (data.content) {
-            setCombinedText(data.content); 
-        }
+      const data: CombinedText = await response.json(); 
+      console.log("Fetched results:", data);
+      setCombinedText(data); 
     } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "An unknown error occurred while fetching combined text");
+      setError(err instanceof Error ? err.message : "An unknown error occurred while fetching combined text");
     }
   }, [analysisId]);
-
-  
 
   const fetchResultsZIP = useCallback(async () => {
     try {
@@ -85,14 +85,19 @@ const AnalysisResults = () => {
     }
   }, [analysisId]);
 
-  const { theme } = useTheme();
+  useEffect(() => {
+    if (message === "Analysis completed") {
+      fetchResults();
+      fetchResultsZIP();
+    }
+  }, [message, fetchResults, fetchResultsZIP]); 
 
   return (
     <div className="relative z-10 rounded-sm bg-white p-8 shadow-three dark:bg-gray-dark sm:p-11 lg:p-8 xl:p-11">
       <h1 className="mb-4 text-2xl font-bold leading-tight text-black dark:text-white mt-24">
         Analysis Results
       </h1>
-
+  
       {message && (
         <p className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400">
           Status: {message}
@@ -103,7 +108,7 @@ const AnalysisResults = () => {
           {error}
         </p>
       )}
-
+  
       <div className={`mb-6 rounded-sm p-6 ${theme === 'dark' ? 'dark:bg-[#2C303B]' : 'bg-[#f9f9f9]'}`}>
         <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'dark:text-white' : 'text-[#333]'}`}>Submitted Sequence:</h3>
         
@@ -115,47 +120,28 @@ const AnalysisResults = () => {
         </div>
       </div>
 
-      {combinedText && Array.isArray(combinedText) && (
-        <div className={`mb-6 rounded-sm p-6 ${theme === 'dark' ? 'dark:bg-[#333]' : 'bg-[#f7f7f7]'}`}>
-          <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'dark:text-white' : 'text-[#333]'}`}>Analysis Results:</h3>
-          <table className="w-full mt-4 border-collapse">
-            <thead>
-              <tr>
-                <th className={`px-4 py-2 text-left ${theme === 'dark' ? 'dark:text-white' : 'text-[#555]'}`}>
-                  Mutation
-                </th>
-                <th className={`px-4 py-2 text-left ${theme === 'dark' ? 'dark:text-white' : 'text-[#555]'}`}>
-                  Original Sequence
-                </th>
-                <th className={`px-4 py-2 text-left ${theme === 'dark' ? 'dark:text-white' : 'text-[#555]'}`}>
-                  Score
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {combinedText.map((row, index) => (
-                <tr key={index}>
-                  <td className="px-4 py-2">
-                    <a
-                      href="/pair"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        localStorage.setItem('mutantSequence', row.mutation);
-                        localStorage.setItem('wildSequence', row.Original_sequence);
-                        window.location.href = "/pair"; 
-                      }}
-                      className={`text-blue-500 hover:text-blue-700 ${theme === 'dark' ? 'dark:text-blue-300 dark:hover:text-blue-500' : ''}`}
-                    >
-                      {row.mutation}
-                    </a>
-                  </td>
-                  <td className="px-4 py-2">{row.Original_sequence}</td>
-                  <td className="px-4 py-2">{row.Score}</td>
-                </tr>
+      {/* Tabela */}
+      {combinedText && (
+        <table className="min-w-full table-auto border-collapse border border-gray-200">
+          <thead>
+            <tr>
+              {combinedText.columns.map((col, index) => (
+                <th key={index} className="border border-gray-300 p-2 bg-gray-800 text-left">{col}</th>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </tr>
+          </thead>
+          <tbody>
+            {combinedText.rows.map((row, rowIndex) => (
+              <tr key={rowIndex} className="hover:bg-gray-150">
+                <td className="border border-gray-300 p-2">{row.no}</td>
+                <td className="border border-gray-300 p-2">{row.Mutation}</td>
+                <td className="border border-gray-300 p-2">{row.RNApdist}</td>
+                <td className="border border-gray-300 p-2">{row['RNAdistance(f)']}</td>
+                <td className="border border-gray-300 p-2">{row['Z-score']}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
 
       {downloadUrl && (
@@ -172,6 +158,5 @@ const AnalysisResults = () => {
     </div>
   );
 };
-
 
 export default AnalysisResults;

@@ -192,26 +192,24 @@ def analyze_single():
 def get_csv_preview(analysis_id):
     logger.debug(f"In get csv")
     pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    #csv_file_path = os.path.join(pipeline_dir, 'ten_best_results.csv')
-    csv_file_path = os.path.join(pipeline_dir, 'mutation_results.csv')
-    logger.debug(f"Expected CSV file path: {csv_file_path}")
-    
+    csv_file_path = os.path.join(pipeline_dir, 'ten_best_results.csv')
+
     if not os.path.exists(csv_file_path):
         logger.debug("CSV not found")
         return jsonify({'error': 'File not found'}), 404
 
     try:
-        
         df = pd.read_csv(csv_file_path)
-        
-        preview_data = df.head(10).to_dict(orient='records')
+        preview_data = {
+            "columns": list(df.columns),
+            "rows": df.head(10).to_dict(orient='records')
+        }
         logger.debug(f"Preview data: {preview_data}")
-        return jsonify({'content': preview_data})
+        return jsonify(preview_data)
 
     except Exception as e:
         logger.error(f"Error reading the file: {str(e)}")
         return jsonify({'error': f'Error reading the file: {str(e)}'}), 500
-
 
 
 @app.route('/api/results/<analysis_id>/zip-download', methods=['GET'])
