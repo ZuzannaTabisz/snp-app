@@ -105,102 +105,96 @@ const AnalysisPage = () => {
   const { theme } = useTheme();
 
   return (
-    <div className="relative z-10 rounded-sm bg-white p-8 shadow-three dark:bg-gray-dark sm:p-11 lg:p-8 xl:p-11">
-      <h1 className="mb-4 text-2xl font-bold leading-tight text-black dark:text-white mt-24">
+    <div className={`relative z-10 rounded-sm p-8 shadow-three ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-black'} sm:p-11 lg:p-8 xl:p-11`}>
+      <h1 className="mb-4 text-2xl font-bold leading-tight mt-24">
         Analysis Results
       </h1>
-
+  
       {message && (
-        <p className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400">
+        <p className={`mb-4 text-center text-lg font-medium ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
           Status: {message}
         </p>
       )}
       {error && (
-        <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400">
+        <p className={`mb-4 text-center text-lg font-medium ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
           {error}
         </p>
       )}
-
-      <div className={`mb-6 rounded-sm p-6 ${theme === 'dark' ? 'dark:bg-[#2C303B]' : 'bg-[#f9f9f9]'}`}>
-        <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'dark:text-white' : 'text-[#333]'}`}>Submitted Sequences:</h3>
+  
+      <div className={`mb-6 rounded-sm p-6 ${theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'}`}>
+        <h3 className="text-xl font-semibold">Submitted Sequences:</h3>
         <div>
-          <strong className={`text-[#555] ${theme === 'dark' ? 'dark:text-gray-300' : ''}`}>Mutant Sequence:</strong>
-          <p className={`mt-2 p-4 rounded-md ${theme === 'dark' ? 'dark:bg-[#333] dark:text-white' : 'bg-white text-black'}`}>
+          <strong>Mutant Sequence:</strong>
+          <p className={`mt-2 p-4 rounded-md ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-white text-black'}`}>
             {mutantSequence || "N/A"}
           </p>
         </div>
         <div>
-          <strong className={`text-[#555] ${theme === 'dark' ? 'dark:text-gray-300' : ''}`}>Wild-Type Sequence:</strong>
-          <p className={`mt-2 p-4 rounded-md ${theme === 'dark' ? 'dark:bg-[#333] dark:text-white' : 'bg-white text-black'}`}>
+          <strong>Wild-Type Sequence:</strong>
+          <p className={`mt-2 p-4 rounded-md ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-white text-black'}`}>
             {wildSequence || "N/A"}
           </p>
         </div>
       </div>
-
+  
       {combinedText && (
-        <div className={`mb-6 rounded-sm p-6 ${theme === 'dark' ? 'dark:bg-[#333]' : 'bg-[#f7f7f7]'}`}>
-          <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'dark:text-white' : 'text-[#333]'}`}>Analysis Results:</h3>
-          <pre
-            className={`mt-4 text-[#333] ${theme === 'dark' ? 'dark:text-white' : ''}`}
-          >
-            {combinedText}
-          </pre>
+        <div className={`mb-6 rounded-sm p-6 ${theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'}`}>
+          <h3 className="text-xl font-semibold">Analysis Results:</h3>
+          <pre className="mt-4">{combinedText}</pre>
         </div>
       )}
-
+  
       {downloadUrl && (
         <div className="text-center mt-6">
           <a
             href={downloadUrl}
             download={`${analysisId}.zip`}
-            className={`px-9 py-4 rounded-sm shadow-submit duration-300 ${theme === 'dark' ? 'dark:bg-green-700 dark:hover:bg-green-600' : 'bg-green-500 text-white hover:bg-green-600'}`}
+            className={`px-9 py-4 rounded-sm shadow-submit duration-300 ${theme === 'dark' ? 'bg-green-700 hover:bg-green-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}
           >
             Download Results
           </a>
         </div>
       )}
-
+  
       <div className="flex justify-between mt-6">
-        {/* Obrazy SVG: WT i Mutant */}
         <div className="w-1/2 text-center">
           {svgUrlMut && (
-            <div className="mb-4 border-2 p-4 rounded-sm">
-              <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'dark:text-white' : 'text-[#333]'}`}>MUT SVG:</h3>
+            <div className={`mb-4 border-2 p-4 rounded-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+              <h3 className="text-xl font-semibold">MUT SVG:</h3>
               <object data={svgUrlMut} type="image/svg+xml" width="100%" height="400" />
             </div>
           )}
         </div>
         <div className="w-1/2 text-center">
           {svgUrlWt && (
-            <div className="mb-4 border-2 p-4 rounded-sm">
-              <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'dark:text-white' : 'text-[#333]'}`}>WT SVG:</h3>
+            <div className={`mb-4 border-2 p-4 rounded-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+              <h3 className="text-xl font-semibold">WT SVG:</h3>
               <object data={svgUrlWt} type="image/svg+xml" width="100%" height="400" />
             </div>
           )}
         </div>
       </div>
-
+  
       <div className="flex justify-between mt-6">
-        {/* Obrazy Tree SVG: WT i Mutant */}
         <div className="w-1/2 text-center">
           {svgTreeUrlMut && (
-            <div className="mb-4 border-2 p-4 rounded-sm">
-              <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'dark:text-white' : 'text-[#333]'}`}>TREE MUT SVG:</h3>
+            <div className={`mb-4 border-2 p-4 rounded-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+              <h3 className="text-xl font-semibold">TREE MUT SVG:</h3>
               <object data={svgTreeUrlMut} type="image/svg+xml" width="100%" height="400" />
             </div>
           )}
         </div>
         <div className="w-1/2 text-center">
           {svgTreeUrlWt && (
-            <div className="mb-4 border-2 p-4 rounded-sm">
-              <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'dark:text-white' : 'text-[#333]'}`}>TREE WT SVG:</h3>
+            <div className={`mb-4 border-2 p-4 rounded-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+              <h3 className="text-xl font-semibold">TREE WT SVG:</h3>
               <object data={svgTreeUrlWt} type="image/svg+xml" width="100%" height="400" />
             </div>
           )}
         </div>
       </div>
     </div>
-  );
+  );  
 };
 
 
