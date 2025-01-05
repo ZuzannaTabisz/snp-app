@@ -27,7 +27,7 @@ services:
     dns:
       - 8.8.8.8
       - 8.8.4.4
-    container_name: backend_snp
+    container_name: backend
     restart: always
     build:
       context: ./backend
@@ -50,7 +50,7 @@ services:
       - db
 
   frontend:
-    container_name: next_frontend
+    container_name: frontend
     restart: unless-stopped
     build:
       context: ./frontend
