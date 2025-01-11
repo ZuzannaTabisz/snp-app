@@ -12,6 +12,26 @@ const SinglePage = () => {
 
   const MAX_SEQUENCE_LENGTH = 100;
 
+  const handleExampleClick = (example: number) => {
+    if (example === 1) {
+        setWildSequence(
+            "AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGC"
+        );
+        //setDbSnpId("rs12345");
+    } else if (example === 2) {
+        setWildSequence(
+            "CGAUGCUAGCUAUGCUAGCUAUCGAUGCGAUCGGAUCGGAUGCGAUCGGAUCCGAUCGCUAGCUAGCUUAUGCUAGCUAGCGC"
+        );
+        //setDbSnpId("rs67890");
+    } else if (example === 3) {
+        setWildSequence(
+            "GGCUAGCUAUCGAUGCUAGCUAUGCUAGCGGAUCGGAUCGGAUCGGAUCGGAUCGAUCGAUCGAUGCGAUCGGAUCGAUGCGC"
+        );
+        //setDbSnpId("rs98765");
+    }
+    setError("");
+  };
+  
   // sequence should not contain both U and T
   const isValidSequence = (sequence: string, setError: (error: string) => void) => {
     const upperSequence = sequence.toUpperCase();
@@ -190,7 +210,31 @@ const SinglePage = () => {
         >
           Search dbSNP
         </button>
-  
+
+        <button
+          type="button"
+          className={`mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 ${theme === 'dark' ? 'bg-orange-700 shadow-submit-dark' : 'bg-orange-500 hover:bg-orange-600'}`}
+          onClick={() => handleExampleClick(1)}
+        >
+          Example 1
+        </button>
+
+        <button
+          type="button"
+          className={`mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 ${theme === 'dark' ? 'bg-pink-700 shadow-submit-dark' : 'bg-pink-500 hover:bg-pink-600'}`}
+          onClick={() => handleExampleClick(2)}
+        >
+          Example 2
+        </button>
+
+        <button
+          type="button"
+          className={`mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 ${theme === 'dark' ? 'bg-purple-700 shadow-submit-dark' : 'bg-purple-500 hover:bg-purple-600'}`}
+          onClick={() => handleExampleClick(3)}
+        >
+          Example 3
+        </button>
+        
         <input
           type="submit"
           value="Submit"
