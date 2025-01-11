@@ -57,7 +57,8 @@ CREATE TABLE IF NOT EXISTS rna_plot_result (
 CREATE TABLE IF NOT EXISTS tree_result (
     id CHAR(36) PRIMARY KEY,
     task_id CHAR(36) NOT NULL,
-    tree_url TEXT NOT NULL,
+    tree_wt_url TEXT NOT NULL,
+    tree_mut_url TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     processing_status ENUM('pending', 'in_progress', 'completed', 'error') DEFAULT 'pending',
     FOREIGN KEY (task_id) REFERENCES pair(id) ON DELETE CASCADE
@@ -67,7 +68,6 @@ CREATE TABLE IF NOT EXISTS tree_result (
 CREATE TABLE IF NOT EXISTS rna_distance_result (
     id CHAR(36) PRIMARY KEY,
     task_id CHAR(36) NOT NULL,
-    dist_url TEXT NOT NULL,
     distance_f FLOAT NOT NULL,
     distance_h FLOAT NOT NULL,
     distance_w FLOAT NOT NULL,
@@ -86,12 +86,11 @@ CREATE TABLE IF NOT EXISTS rna_distance_result (
 CREATE TABLE IF NOT EXISTS top_10 (
     id CHAR(36) PRIMARY KEY,
     wild_type_seq_id CHAR(36) NOT NULL,
-    mutant_seq_id CHAR(36) NOT NULL,
+    mutant_sequence TEXT NOT NULL,
     rank_snp ENUM('1', '2', '3', '4', '5', '6', '7', '8', '9', '10'),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     processing_status ENUM('pending', 'in_progress', 'completed', 'error') DEFAULT 'pending',
-    FOREIGN KEY (wild_type_seq_id) REFERENCES single(id) ON DELETE CASCADE,
-    FOREIGN KEY (mutant_seq_id) REFERENCES pair(id) ON DELETE CASCADE
+    FOREIGN KEY (wild_type_seq_id) REFERENCES single(id) ON DELETE CASCADE
 );
 
 DELIMITER $$
