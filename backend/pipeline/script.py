@@ -2,10 +2,15 @@ import argparse
 import pandas as pd
 import subprocess
 import os
+import sys
 import logging
 import numpy as np
 import scipy.stats as stats
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import uuid
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+sys.path.append(parent_dir)
+from app import app, update_table_single, update_table_top_10
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -101,21 +106,65 @@ def process_mutation(key, mutation, script_directory, sequences_directory):
     except Exception as e:
         print(f"Error processing mutation {key}: {e}")
         return None
+    
+def generate_mutated_sequences(wild_sequence, mutations):
+    """
+    Generuje listę zmutowanych sekwencji na podstawie sekwencji dzikiej i listy mutacji.
+
+    Args:
+    - wild_sequence (str): Sekwencja dzika (oryginalna).
+    - mutations (list of str): Lista mutacji w formacie "X_n_Y", gdzie:
+        - X to nukleotyd w pozycji `n` (lub "-" dla insercji),
+        - n to indeks (1-indeksowany),
+        - Y to nukleotyd docelowy (lub "-" dla delecji).
+
+    Returns:
+    - list of str: Lista zmutowanych sekwencji.
+    """
+    mutated_sequences = []
+
+    for mutation in mutations:
+        parts = mutation.split('_')
+        if len(parts) != 3:
+            raise ValueError(f"Nieprawidłowy format mutacji: {mutation}")
+
+        original, position, change = parts
+        position = int(position) - 1 
+
+        if original == "-" and change in "ACGUT":  # Insercja
+            mutated_sequence = wild_sequence[:position] + change + wild_sequence[position:]
+        elif change == "-":  # Delecja
+            mutated_sequence = wild_sequence[:position] + wild_sequence[position + 1:]
+        elif original in "ACGUT" and change in "ACGUT":  # Substytucja
+            mutated_sequence = wild_sequence[:position] + change + wild_sequence[position + 1:]
+        else:
+            raise ValueError(f"Nieprawidłowa mutacja: {mutation}")
+
+        mutated_sequences.append(mutated_sequence)
+
+    return mutated_sequences
 
 def main():
+
     parser = argparse.ArgumentParser(description="Script to process RNA mutations and analyze results.")
     parser.add_argument("path", help="Path to the directory containing sequence files.")
+    parser.add_argument("analysis_id", help="Unique ID for the analysis.")
     args = parser.parse_args()
 
+    analysis_id = args.analysis_id
     sequences_directory = args.path
     script_directory = os.getcwd()
     os.chdir(sequences_directory)
 
+
     with open("wt.txt", 'r') as f:
         original_sequence = f.readline().strip()
-
-    
+        with app.app_context():  
+            update_table_single(analysis_id, 'in_progress')
+            for rank in range(1, 11):   
+                update_table_top_10(analysis_id, 'empty', str(rank), 'in_progress')
     mutations = generate_mutations(original_sequence)
+    
 
     results = []
     arr_pdist = []
@@ -157,17 +206,17 @@ def main():
                 'RNAdistance(f)': arr_distance[elem],
                 'Z-score': score
             }
-            #to counnter the warning about dataframe concat
-            #new_row_df = pd.DataFrame([new_row])
-            #new_row_df = new_row_df.dropna(axis=1, how='all')
-            #ten_best = pd.concat([ten_best, new_row_df], ignore_index=True)
             ten_best = pd.concat([ten_best, pd.DataFrame([new_row])], ignore_index=True)
 
-    
     ten_best = ten_best.sort_values(by='Z-score', ascending=False).head(10)
+    mutations = ten_best['Mutation'].tolist()
+    mutated_sequences = generate_mutated_sequences(original_sequence, mutations)
+    with app.app_context():
+        rank = 1
+        for mutated_sequence in mutated_sequences: 
+            update_table_top_10(analysis_id, mutated_sequence, rank, 'completed')
+            rank += 1
     ten_best.to_csv("ten_best_results.csv", index=False)
-
-
 
     results_df = pd.DataFrame(results)
     output_csv_path = os.path.join(sequences_directory, "mutation_results.csv")
