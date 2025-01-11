@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, send_file
-import mysql.connector
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 import logging
@@ -11,7 +10,15 @@ import shutil
 import eventlet
 import pandas as pd
 import requests
+# db
 import re
+import mysql.connector
+import numpy as np
+import scipy.stats as stats
+from concurrent.futures import ThreadPoolExecutor, as_completed, wait
+from pipeline.script import generate_mutations, process_mutation, generate_mutated_sequences
+
+
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -548,6 +555,7 @@ def test_db():
     conn.close()
     return jsonify(result)
 
+
 def run_step(step_name, command, cwd, analysis_id):
     try:
         subprocess.run(command, cwd=cwd, check=True)
@@ -563,21 +571,22 @@ def run_step(step_name, command, cwd, analysis_id):
 
 
 def run_pipeline(mutant_sequence, wild_sequence, analysis_id):
+
     with app.app_context():
         update_table_pair(analysis_id, 'in_progress')
 
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    os.makedirs(pipeline_dir, exist_ok=True)
-    
-    wt_file_path = os.path.join(pipeline_dir, 'wt.txt')
-    mut_file_path = os.path.join(pipeline_dir, 'mut.txt')
+    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+    os.makedirs(analysis_dir, exist_ok=True)
+
+    wt_file_path = os.path.join(analysis_dir, 'wt.txt')
+    mut_file_path = os.path.join(analysis_dir, 'mut.txt')
 
     with open(wt_file_path, 'w') as wt_file:
         wt_file.write(wild_sequence + '\n')
     with open(mut_file_path, 'w') as mut_file:
         mut_file.write(mutant_sequence + '\n')
 
-    
+
     socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
 
     steps = [
@@ -585,21 +594,20 @@ def run_pipeline(mutant_sequence, wild_sequence, analysis_id):
         ("02-RNAfold", ['bash', os.path.join(BASE_DIR, 'pipeline', '02-RNAfold')]),
         ("03-RNAdistance", ['bash', os.path.join(BASE_DIR, 'pipeline', '03-RNAdistance')]),
         ("04-RNAplot", ['bash', os.path.join(BASE_DIR, 'pipeline', '04-RNAplot')]),
-        ("HITtree", ['python3', os.path.join(BASE_DIR, 'pipeline', 'tree.py'), pipeline_dir])
-        
+        ("HITtree", ['python3', os.path.join(BASE_DIR, 'pipeline', 'tree.py'), analysis_dir])
+
     ]
 
     for step_name, command in steps:
-        if not run_step(step_name, command, pipeline_dir, analysis_id):
+        if not run_step(step_name, command, analysis_dir, analysis_id):
             return
-
-    #with app.app_context():
-    #   update_table_pair(analysis_id, 'completed')  #tutaj złe miejsce musi byc po funkcji twojej i opcja ze error jesli w innej jest errorr
 
     save_from_file_to_database(analysis_id)
     with app.app_context():
         update_table_pair(analysis_id, 'completed')
+
     socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
+
 
 def parse_rnadistance_result_safe(text):
     pattern = r"(?P<param>[fFhHcCwWP]):\s*(-?\d+\.?\d*)?"
@@ -725,7 +733,7 @@ def save_from_file_to_database(analysis_id):
 
     for filename in file_save_to_db_as_path:
         file_path = os.path.join(pipeline_dir, filename)
-        logger.debug(f"ania1 {file_path}")
+        logger.debug(f"{file_path}")
         if os.path.exists(file_path):
             if filename == 'mut-dotbracket.svg':
                 file_mut_dotbracket_svg_found = True
@@ -760,9 +768,10 @@ def save_from_file_to_database(analysis_id):
 
     if not file_wt_tree_svg_found and file_mut_tree_svg_found:
         with app.app_context():
-            save_to_table_tree_result(analysis_id, 'empty', 3)
+            save_to_table_tree_result(analysis_id, 'empty', 3) 
 
-@app.route('/api/analyze/pair', methods=['POST'])  # ze start pair
+
+@app.route('/api/analyze/pair', methods=['POST'])
 def analyze_pair():
     data = request.get_json()
     if not data:
@@ -771,20 +780,21 @@ def analyze_pair():
     mutant_sequence = data.get('mutantSequence')
     wild_sequence = data.get('wildSequence')
     logger.debug(f"Mutant sequence: {mutant_sequence}, Wild sequence: {wild_sequence}")
-    
+
     if not wild_sequence or not mutant_sequence:
         return jsonify({'error': 'Invalid input data'}), 400
 
     analysis_id = str(uuid.uuid4())
     socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
+
     with app.app_context():
-            save_to_table_pair(analysis_id, wild_sequence, mutant_sequence, 'pending')
-            #penidng daj inny tavbelom
+        save_to_table_pair(analysis_id, wild_sequence, mutant_sequence, 'pending')
+        
+
     threading.Thread(target=run_pipeline, args=(mutant_sequence, wild_sequence, analysis_id)).start()
-    
+
+
     return jsonify({"analysis_id": analysis_id}), 200
-
-
 
 @app.route('/api/results/pair/<analysis_id>', methods=['GET'])
 def read_from_databse(analysis_id):
@@ -792,8 +802,6 @@ def read_from_databse(analysis_id):
     combined_content += read_from_table_rna_pdist_result(analysis_id)
     combined_content += read_from_table_rna_distance_result(analysis_id)
     return jsonify({"content": combined_content})
-
-
 
 
 @app.route('/api/results/pair/<analysis_id>/rna-plot-mut', methods=['GET'])
@@ -825,6 +833,7 @@ def get_svg_from_database(analysis_id, filename):
     return send_file(svg_path, mimetype='image/svg+xml')
 
 
+
 @app.route('/api/analyze/single', methods=['POST'])
 def analyze_single():
     data = request.get_json()
@@ -833,61 +842,128 @@ def analyze_single():
 
     wild_sequence = data.get('wildSequence')
     logger.debug(f"Wild sequence: {wild_sequence}")
-    
+
     if not wild_sequence:
         return jsonify({'error': 'Invalid input data'}), 400
 
     analysis_id = str(uuid.uuid4())
     socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
-    with app.app_context():
-            save_to_table_single(analysis_id, wild_sequence, 'pending')
-            for rank in range(1, 11):
-                id = str(uuid.uuid4())   
-                save_to_table_top_10(id, analysis_id, 'empty', rank, 'pending')
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    os.makedirs(pipeline_dir, exist_ok=True)
+    
 
-    wt_file_path = os.path.join(pipeline_dir, 'wt.txt')
+    # saving wt sequence nad  analysys id to db
+    with app.app_context():
+        save_to_table_single(analysis_id, wild_sequence, 'pending')
+        for rank in range(1, 11):
+            id = str(uuid.uuid4())   
+            save_to_table_top_10(id, analysis_id, 'empty', rank, 'pending')
+
+
+    
+    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+    os.makedirs(analysis_dir, exist_ok=True)
+
+
+
+    wt_file_path = os.path.join(analysis_dir, 'wt.txt')
     with open(wt_file_path, 'w') as wt_file:
         wt_file.write(wild_sequence + '\n')
 
+    script_directory = os.path.join(BASE_DIR, 'pipeline')
 
-    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
+    os.makedirs(analysis_dir, exist_ok=True)
+    os.chdir(analysis_dir)
+
+    results = []
+    arr_pdist = []
+    arr_distance = []
+
+    total_mutations = 3 * (len(wild_sequence)) + len(wild_sequence) + 4 * (len(wild_sequence)+1)
+    logger.info(f"Total mutations: {total_mutations}")
+    logger.info(f"Length: {len(wild_sequence)}")
+    processed_mutations = -1
+
+    try:
+
+        with app.app_context():  
+            update_table_single(analysis_id, 'in_progress')
+            for rank in range(1, 11):   
+                update_table_top_10(analysis_id, 'empty', str(rank), 'in_progress')
+        
+
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for key, mutation in generate_mutations(wild_sequence):
+                futures.append(executor.submit(process_mutation, key, mutation, script_directory, analysis_dir, wild_sequence))
+
+            for future in as_completed(futures):
+                result = future.result()
+                processed_mutations += 1
+                progress = (processed_mutations / total_mutations) * 100
+                logger.info(f"Progress: {progress:.2f}%")
+
+                if result:
+                    results.append(result)
+                    rnapdist_value = result['RNApdist']
+                    rnadistance_value = result['RNAdistance(f)']
+
+                    arr_pdist.append(float(rnapdist_value) if isinstance(rnapdist_value, float) else np.nan)
+                    arr_distance.append(float(rnadistance_value) if isinstance(rnadistance_value, float) else np.nan)
+
+            wait(futures)
+
+        arr_pdist = np.array(arr_pdist)
+        arr_distance = np.array(arr_distance)
+
+        arr_pdist_z = stats.zscore(arr_pdist, nan_policy='omit')
+        arr_distance_z = stats.zscore(arr_distance, nan_policy='omit')
+
+        for i, result in enumerate(results):
+            result['Z-score'] = arr_pdist_z[i] + arr_distance_z[i] if not np.isnan(arr_pdist_z[i]) and not np.isnan(arr_distance_z[i]) else np.nan
+
+        results_df = pd.DataFrame(results)
+        output_csv_path = os.path.join(analysis_dir, "mutation_results.csv")
+        results_df.to_csv(output_csv_path, index=False)
 
 
-    def run_analysis():
-        try:
-            result = subprocess.run(
-                ['python3', os.path.join(BASE_DIR, 'pipeline', 'script.py'), pipeline_dir, analysis_id],
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            output = result.stdout
-            logger.debug(f"Script output: {output}")
-            with app.app_context():  
-                update_table_single(analysis_id, 'completed') 
-            socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Error while running script: {e.stderr}")
-            with app.app_context():  
-                update_table_single(analysis_id, 'error')
-                for rank in range(1, 11):   
-                    update_table_top_10(analysis_id, 'empty', str(rank), 'error')
-            socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis failed"}, broadcast=True, namespace=f'/{analysis_id}')
 
+        ten_best = results_df.sort_values(by='Z-score', ascending=False).head(10)
+        ten_best_csv_path = os.path.join(analysis_dir, "ten_best_results.csv")
+        ten_best.to_csv(ten_best_csv_path, index=False)
+
+        mutations = ten_best['Mutation'].tolist()
+        mutated_sequences = generate_mutated_sequences(wild_sequence, mutations)
+        with app.app_context():
+            rank = 1
+            for mutated_sequence in mutated_sequences: 
+                update_table_top_10(analysis_id, mutated_sequence, rank, 'completed')
+                rank += 1
+        ten_best.to_csv("ten_best_results.csv", index=False)
+
+
+        logger.info(f"Zakończono generowanie mutacji i zapis wyników do {output_csv_path}.")
+
+        with app.app_context():  
+            update_table_single(analysis_id, 'completed') 
+
+        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
     
-    analysis_thread = threading.Thread(target=run_analysis, daemon=True)
-    analysis_thread.start()
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error while running script: {e.stderr}")
+        with app.app_context():  
+            update_table_single(analysis_id, 'error')
+            for rank in range(1, 11):   
+                update_table_top_10(analysis_id, 'empty', str(rank), 'error')
+        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis failed"}, broadcast=True, namespace=f'/{analysis_id}')   
 
     return jsonify({"analysis_id": analysis_id}), 200
+
 
 
 @app.route('/api/results/single/<analysis_id>', methods=['GET'])
 def get_csv_preview(analysis_id):
     logger.debug(f"In get csv")
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    csv_file_path = os.path.join(pipeline_dir, 'ten_best_results.csv')
+    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+    csv_file_path = os.path.join(analysis_dir, 'ten_best_results.csv')
 
     if not os.path.exists(csv_file_path):
         logger.debug("CSV not found")
@@ -899,6 +975,7 @@ def get_csv_preview(analysis_id):
             "columns": list(df.columns),
             "rows": df.head(10).to_dict(orient='records')
         }
+
         logger.debug(f"Preview data: {preview_data}")
         return jsonify(preview_data)
 
@@ -909,13 +986,13 @@ def get_csv_preview(analysis_id):
 
 @app.route('/api/results/<analysis_id>/zip-download', methods=['GET'])
 def download_results_zip(analysis_id):
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    zip_path = os.path.join(pipeline_dir, f"{analysis_id}.zip")
+    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+    zip_path = os.path.join(analysis_dir, f"{analysis_id}.zip")
 
-    if not os.path.exists(pipeline_dir):
+    if not os.path.exists(analysis_dir):
         return jsonify({'error': 'Analysis not found'}), 404
 
-    shutil.make_archive(zip_path.replace(".zip", ""), 'zip', pipeline_dir)
+    shutil.make_archive(zip_path.replace(".zip", ""), 'zip', analysis_dir)
     return send_file(zip_path, as_attachment=True)
 
 
@@ -938,18 +1015,18 @@ def get_sequence(chromosome, start_pos, end_pos):
 
         logger.debug("Sending GET request to Ensembl API")
         response = requests.get(url, headers=headers, params=params)
-        
+
 
         response.raise_for_status()
         logger.debug(f"Response Status Code: {response.status_code}")
-        
+
 
         logger.debug("Parsing JSON response")
         response_json = response.json()
         logger.debug(f"Received JSON response: {response_json}")
-        
+
         return response_json
-    
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {str(e)}")
         return {"error": str(e)}
@@ -962,11 +1039,11 @@ def get_sequence(chromosome, start_pos, end_pos):
 
 def check_internet_connection(url="http://www.google.com", verify=False):
     logger.debug(f"Checking internet connection to {url}")
-    
+
     try:
         logger.debug(f"Sending GET request to {url} with SSL verification set to {verify}")
         response = requests.get(url, timeout=5, verify=verify)
-        
+
 
         if response.status_code == 200:
             logger.debug(f"Connection successful. Status code: {response.status_code}")
@@ -986,7 +1063,7 @@ def check_internet_connection(url="http://www.google.com", verify=False):
 #https://stackoverflow.com/questions/23013220/max-retries-exceeded-with-url-in-requests
 def search_clinical_tables(snp_id):
     logger.debug("Checking internet connection")
-    
+
     if not check_internet_connection():
         logger.error("No internet connection available.")
 
@@ -1001,37 +1078,37 @@ def search_clinical_tables(snp_id):
     logger.debug(f"Starting search for SNP ID: {snp_id}")
     logger.debug(f"Request URL: {base_url}")
     logger.debug(f"Request parameters: {params}")
-    
+
     try:
 
         session = requests.Session()
-    
+
 
         logger.debug("Sending GET request to Clinical Tables API")
-        
+
         response = session.get(base_url, params=params, timeout=10)
 
         logger.debug("Sending GET request to Clinical Tables API")
         response = requests.get(base_url, params=params, timeout = 10)
         response.raise_for_status()
-        
+
         logger.debug(f"Response Status Code: {response.status_code}")
-        
-        
+
+
         response.raise_for_status()
         logger.debug("Response received successfully, parsing JSON")
-        
-        
+
+
         response_json = response.json()
         logger.debug(f"Received JSON response: {response_json}")
-        
+
         if not response_json or not isinstance(response_json, list) or len(response_json) < 4:
             logger.warning(f"Unexpected response structure: {response_json}")
             return {"error": "Unexpected response structure"}
-        
+
         logger.debug(f"Successfully retrieved SNP data for {snp_id}.")
         return response_json
-    
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Request failed: {str(e)}")
         return {"error": "Request failed"}
@@ -1044,7 +1121,7 @@ def search_clinical_tables(snp_id):
 
 @app.route('/api/dbsnp/<dbSnpId>', methods=['GET'])
 def get_dbSNP(dbSnpId):
-    
+
     result = search_clinical_tables(dbSnpId)
     if "error" in result:
         logger.debug(f"Error fetching SNP data")
@@ -1083,8 +1160,8 @@ def get_dbSNP(dbSnpId):
         flank,
         sequence
         )
-        return jsonify({"error": "Reference allele mismatch", 
-                        "expected": alleles[0], 
+        return jsonify({"error": "Reference allele mismatch",
+                        "expected": alleles[0],
                         "found": sequence[flank]}), 400
 
     mutant = list(sequence)
