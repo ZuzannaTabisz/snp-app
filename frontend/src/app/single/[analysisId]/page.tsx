@@ -27,6 +27,7 @@ const AnalysisResults = () => {
   const { analysisId } = useParams();
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [progress, setProgress] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [combinedText, setCombinedText] = useState<CombinedText | null>(null);
   const [wildSequence, setWildSequence] = useState(localStorage.getItem("wildSequence") || "");
@@ -48,12 +49,19 @@ const AnalysisResults = () => {
       console.log("WebSocket connected");
     });
 
+    socket.on('progress_update', (data) => {
+      setProgress(data.progress);
+    });
+
     socket.on("connect_error", (err: unknown) => {
       console.error("WebSocket connection error:", err);
     });
 
-    socket.on("task_status", (data: TaskStatus) => {
-      setMessage(data.status);
+    socket.on('task_status', (data: { analysis_id: string; status: string }) => {
+      console.log("WebSocket status update:", data);
+      if (data.analysis_id === analysisId) {
+        setMessage(data.status);
+      }
     });
 
     return () => {
@@ -89,11 +97,12 @@ const AnalysisResults = () => {
   }, [analysisId]);
 
   useEffect(() => {
-    if (message === "Analysis completed") {
+    if (analysisId) {
+      console.log("Program reached the point where analysis is completed.");
       fetchResults();
       fetchResultsZIP();
     }
-  }, [message, fetchResults, fetchResultsZIP]);
+  }, [analysisId, fetchResults, fetchResultsZIP]);
 
   const handleSort = (key: string) => {
     setSortConfig((prev) => {
@@ -130,6 +139,17 @@ const AnalysisResults = () => {
           {error}
         </p>
       )}
+
+       {/* Progress Bar */}
+      <div className="relative mb-6 h-4 rounded-full bg-gray-200">
+        <div
+          className={`absolute h-4 rounded-full transition-all duration-300 ${theme === 'dark' ? 'bg-green-500' : 'bg-green-400'}`}
+          style={{ width: `${progress}%` }}
+        ></div>
+      </div>
+      <p className="text-sm text-center">
+        {progress}% Completed
+      </p>
   
       <div className={`mb-6 rounded-sm p-6 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
         <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Submitted Sequence:</h3>

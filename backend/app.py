@@ -10,6 +10,11 @@ import shutil
 import eventlet
 import pandas as pd
 import requests
+import numpy as np
+import scipy.stats as stats
+from pipeline.script import generate_mutations, process_mutation
+from concurrent.futures import ThreadPoolExecutor, as_completed, wait
+import time
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -35,11 +40,11 @@ def run_step(step_name, command, cwd, analysis_id):
 
 
 def run_pipeline(mutant_sequence, wild_sequence, analysis_id):
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    os.makedirs(pipeline_dir, exist_ok=True)
+    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+    os.makedirs(analysis_dir, exist_ok=True)
     
-    wt_file_path = os.path.join(pipeline_dir, 'wt.txt')
-    mut_file_path = os.path.join(pipeline_dir, 'mut.txt')
+    wt_file_path = os.path.join(analysis_dir, 'wt.txt')
+    mut_file_path = os.path.join(analysis_dir, 'mut.txt')
 
     with open(wt_file_path, 'w') as wt_file:
         wt_file.write(wild_sequence + '\n')
@@ -54,12 +59,12 @@ def run_pipeline(mutant_sequence, wild_sequence, analysis_id):
         ("02-RNAfold", ['bash', os.path.join(BASE_DIR, 'pipeline', '02-RNAfold')]),
         ("03-RNAdistance", ['bash', os.path.join(BASE_DIR, 'pipeline', '03-RNAdistance')]),
         ("04-RNAplot", ['bash', os.path.join(BASE_DIR, 'pipeline', '04-RNAplot')]),
-        ("HITtree", ['python3', os.path.join(BASE_DIR, 'pipeline', 'tree.py'), pipeline_dir])
+        ("HITtree", ['python3', os.path.join(BASE_DIR, 'pipeline', 'tree.py'), analysis_dir])
         
     ]
 
     for step_name, command in steps:
-        if not run_step(step_name, command, pipeline_dir, analysis_id):
+        if not run_step(step_name, command, analysis_dir, analysis_id):
             return
 
     socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
@@ -90,9 +95,9 @@ def analyze_pair():
 
 @app.route('/api/results/pair/<analysis_id>', methods=['GET'])
 def get_combined_text(analysis_id):
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
 
-    if not os.path.exists(pipeline_dir):
+    if not os.path.exists(analysis_dir):
         return jsonify({'error': 'Analysis not found'}), 404
 
     filenames = [
@@ -103,7 +108,7 @@ def get_combined_text(analysis_id):
 
     combined_content = ""
     for filename in filenames:
-        file_path = os.path.join(pipeline_dir, filename)
+        file_path = os.path.join(analysis_dir, filename)
         if os.path.exists(file_path):
             with open(file_path, 'r') as file:
                 combined_content += f"=== {filename} ===\n{file.read()}\n\n"
@@ -131,8 +136,8 @@ def get_svg_hit_tree_mut(analysis_id):
     return get_svg(analysis_id, 'tree_mut.svg')
 
 def get_svg(analysis_id, filename):
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    svg_path = os.path.join(pipeline_dir, filename)
+    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+    svg_path = os.path.join(analysis_dir, filename)
 
     if not os.path.exists(svg_path):
         return jsonify({'error': 'SVG file not found'}), 404
@@ -155,10 +160,10 @@ def analyze_single():
 
     analysis_id = str(uuid.uuid4())
     socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    os.makedirs(pipeline_dir, exist_ok=True)
+    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+    os.makedirs(analysis_dir, exist_ok=True)
 
-    wt_file_path = os.path.join(pipeline_dir, 'wt.txt')
+    wt_file_path = os.path.join(analysis_dir, 'wt.txt')
     with open(wt_file_path, 'w') as wt_file:
         wt_file.write(wild_sequence + '\n')
 
@@ -166,24 +171,72 @@ def analyze_single():
     socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
 
 
-    def run_analysis():
-        try:
-            result = subprocess.run(
-                ['python3', os.path.join(BASE_DIR, 'pipeline', 'script.py'), pipeline_dir],
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            output = result.stdout
-            logger.debug(f"Script output: {output}")
-            socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Error while running script: {e.stderr}")
-            socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis failed"}, broadcast=True, namespace=f'/{analysis_id}')
+    script_dir = BASE_DIR
+    mutations = generate_mutations(wild_sequence)
 
-    
-    analysis_thread = threading.Thread(target=run_analysis, daemon=True)
-    analysis_thread.start()
+    results = []
+    arr_pdist = []
+    arr_distance = []
+
+    try:
+        with ThreadPoolExecutor() as executor:
+            logger.debug("Threadpool")
+            future_to_mutation = {
+                executor.submit(process_mutation, key, mutation, script_dir, analysis_dir): (key, mutation)
+                for key, mutation in mutations
+            }
+
+            for future in as_completed(future_to_mutation):
+                result = future.result()
+                if result:
+                    results.append(result)
+                    rnapdist_value = result['RNApdist']
+                    rnadistance_value = result['RNAdistance(f)']
+
+                    arr_pdist.append(float(rnapdist_value) if rnapdist_value.replace('.', '', 1).isdigit() else np.nan)
+                    arr_distance.append(float(rnadistance_value) if rnadistance_value.replace('.', '', 1).isdigit() else np.nan)
+        
+        logger.debug("Before Z-score")
+        arr_pdist = np.array(arr_pdist)
+        arr_distance = np.array(arr_distance)
+
+        arr_pdist = stats.zscore(arr_pdist, nan_policy='omit')
+        arr_distance = stats.zscore(arr_distance, nan_policy='omit')
+
+        
+        ten_best = pd.DataFrame(columns=['no', 'Mutation', 'RNApdist', 'RNAdistance(f)', 'Z-score'])
+        for elem in range(len(arr_distance)):
+            if not np.isnan(arr_distance[elem]) and not np.isnan(arr_pdist[elem]):
+                score = arr_distance[elem] + arr_pdist[elem]
+                new_row = {
+                    'no': elem + 1,
+                    'Mutation': results[elem]['Mutation'],
+                    'RNApdist': arr_pdist[elem],
+                    'RNAdistance(f)': arr_distance[elem],
+                    'Z-score': score
+                }
+                #to counnter the warning about dataframe concat
+                #new_row_df = pd.DataFrame([new_row])
+                #new_row_df = new_row_df.dropna(axis=1, how='all')
+                #ten_best = pd.concat([ten_best, new_row_df], ignore_index=True)
+                ten_best = pd.concat([ten_best, pd.DataFrame([new_row])], ignore_index=True)
+
+        
+        ten_best = ten_best.sort_values(by='Z-score', ascending=False).head(10)
+        ten_best.to_csv("ten_best_results.csv", index=False)
+
+
+
+        results_df = pd.DataFrame(results)
+        output_csv_path = os.path.join(analysis_dir, "mutation_results.csv")
+        results_df.to_csv(output_csv_path, index=False)
+    except:
+        logger.debug("Exception")
+    logger.debug(f"Zakończono generowanie mutacji i zapis wyników do {output_csv_path}.")
+
+    time.sleep(4)
+    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
+
 
     return jsonify({"analysis_id": analysis_id}), 200
 
@@ -191,8 +244,8 @@ def analyze_single():
 @app.route('/api/results/single/<analysis_id>', methods=['GET'])
 def get_csv_preview(analysis_id):
     logger.debug(f"In get csv")
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    csv_file_path = os.path.join(pipeline_dir, 'ten_best_results.csv')
+    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+    csv_file_path = os.path.join(analysis_dir, 'ten_best_results.csv')
 
     if not os.path.exists(csv_file_path):
         logger.debug("CSV not found")
@@ -214,13 +267,13 @@ def get_csv_preview(analysis_id):
 
 @app.route('/api/results/<analysis_id>/zip-download', methods=['GET'])
 def download_results_zip(analysis_id):
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    zip_path = os.path.join(pipeline_dir, f"{analysis_id}.zip")
+    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+    zip_path = os.path.join(analysis_dir, f"{analysis_id}.zip")
 
-    if not os.path.exists(pipeline_dir):
+    if not os.path.exists(analysis_dir):
         return jsonify({'error': 'Analysis not found'}), 404
 
-    shutil.make_archive(zip_path.replace(".zip", ""), 'zip', pipeline_dir)
+    shutil.make_archive(zip_path.replace(".zip", ""), 'zip', analysis_dir)
     return send_file(zip_path, as_attachment=True)
 
 

@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import io from "socket.io-client";
 import { useTheme } from "next-themes";
 
+
 const AnalysisPage = () => {
   const { analysisId } = useParams();
   const [message, setMessage] = useState("");
@@ -102,6 +103,32 @@ const AnalysisPage = () => {
     }
   }, [message, fetchResults, fetchDownloadUrl, fetchSvgUrls]);
 
+
+  const highlightDifferences = (mutant, wildType) => {
+    const maxLength = Math.max(mutant.length, wildType.length);
+    let highlightedMutant = '';
+    let highlightedWildType = '';
+  
+    for (let i = 0; i < maxLength; i++) {
+      const mutantChar = mutant[i] || ''; 
+      const wildChar = wildType[i] || '';
+  
+      if (mutantChar === wildChar) {
+        highlightedMutant += mutantChar;
+        highlightedWildType += wildChar;
+      } else {
+        highlightedMutant += `<span style="color: #ff69b4;">${mutantChar}</span>`;
+        highlightedWildType += `<span style="color: #ff69b4;">${wildChar}</span>`;
+      }
+    }
+  
+    return { highlightedMutant, highlightedWildType };
+  };
+  
+  const { highlightedMutant, highlightedWildType } = highlightDifferences(mutantSequence, wildSequence);
+  
+
+
   const { theme } = useTheme();
 
   return (
@@ -125,15 +152,11 @@ const AnalysisPage = () => {
         <h3 className="text-xl font-semibold">Submitted Sequences:</h3>
         <div>
           <strong>Mutant Sequence:</strong>
-          <p className={`mt-2 p-4 rounded-md ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-white text-black'}`}>
-            {mutantSequence || "N/A"}
-          </p>
+          <p className={`mt-2 p-4 rounded-md ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-white text-black'}`} dangerouslySetInnerHTML={{ __html: highlightedMutant || "N/A" }} />
         </div>
         <div>
           <strong>Wild-Type Sequence:</strong>
-          <p className={`mt-2 p-4 rounded-md ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-white text-black'}`}>
-            {wildSequence || "N/A"}
-          </p>
+          <p className={`mt-2 p-4 rounded-md ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-white text-black'}`} dangerouslySetInnerHTML={{ __html: highlightedWildType || "N/A" }} />
         </div>
       </div>
   
@@ -144,7 +167,7 @@ const AnalysisPage = () => {
         </div>
       )}
   
-      {downloadUrl && (
+    {downloadUrl && (
         <div className="text-center mt-6">
           <a
             href={downloadUrl}
@@ -195,6 +218,7 @@ const AnalysisPage = () => {
       </div>
     </div>
   );  
+  
 };
 
 

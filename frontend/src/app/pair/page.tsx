@@ -30,8 +30,6 @@ const PairPage = () => {
     return true;
   };
   
-  
-  
 
   const parseFileContent = (content: string, fileType: string) => {
     const lines = content.split("\n").map(line => line.trim());
@@ -160,7 +158,7 @@ const PairPage = () => {
       });
   
       if (!response.ok) throw new Error("Failed to start analysis");
-  
+      // response 
       const responseData = await response.json();
       router.push(`/pair/${responseData.analysis_id}`);
     } catch (err: unknown) {
