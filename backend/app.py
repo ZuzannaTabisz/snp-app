@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_file
+import mysql.connector
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 import logging
@@ -10,6 +11,7 @@ import shutil
 import eventlet
 import pandas as pd
 import requests
+import re
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -19,8 +21,532 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+def extract_mut_or_wt_tree_svg_from_database(analysis_id, filename):
+    conn = connect_to_database()
+    if conn is None:
+        return f"error while connecting to databse (table tree_result)\n"
+    result = ""
+    cursor = conn.cursor()
+    if filename == 'tree_mut.svg':
+        cursor.execute("""
+                SELECT tree_mut_url 
+                FROM tree_result 
+                WHERE task_id = %s
+            """, (analysis_id,))
+        result = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if result:
+            tree_mut_url = result[0]
+            return tree_mut_url
+        else:
+            return "No tree_mut.svg found for the given analysis_id."
+    elif filename == 'tree_wt.svg':
+        cursor.execute("""
+                SELECT tree_wt_url 
+                FROM tree_result 
+                WHERE task_id = %s
+            """, (analysis_id,))
+        result = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if result:
+            tree_wt_url = result[0]
+            return tree_wt_url
+        else:
+            return "No tree_wt.svg found for the given analysis_id."
+    else: return ""
+
+def extract_mut_or_wt_dotbracket_svg_from_database(analysis_id, filename):
+    conn = connect_to_database()
+    if conn is None:
+        return f"error while connecting to databse (table rna_plot_result)\n"
+    result = ""
+    cursor = conn.cursor()
+    if filename == 'mut-dotbracket.svg':
+        cursor.execute("""
+                SELECT mutant_url 
+                FROM rna_plot_result 
+                WHERE task_id = %s
+            """, (analysis_id,))
+        result = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if result:
+            mutant_url = result[0]
+            return mutant_url
+        else:
+            return "No mut-dotbracket.svg found for the given analysis_id."
+    elif filename == 'wt-dotbracket.svg':
+        cursor.execute("""
+                SELECT wild_type_url 
+                FROM rna_plot_result 
+                WHERE task_id = %s
+            """, (analysis_id,))
+        result = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if result:
+            wild_type_url = result[0]
+            return wild_type_url
+        else:
+            return "No wt-dotbracket.svg found for the given analysis_id."
+    else: return ""
+
+def read_from_table_rna_pdist_result(analysis_id):
+    conn = connect_to_database()
+    if conn is None:
+        return f"error while connecting to databse (file RNApdist_result.txt)\n"
+    cursor = conn.cursor()
+    cursor.execute("SELECT distance FROM rna_pdist_result WHERE task_id = %s", (analysis_id,))
+    result = cursor.fetchone()
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    if result:
+        distance = result[0]
+        return f"RNApdist_result.txt:\n{distance}\n"
+    else:
+        return f"file RNApdist_result.txt not found\n"
+
+def read_from_table_rna_distance_result(analysis_id):
+    conn = connect_to_database()
+    if conn is None:
+        return f"error while connecting to databse (file RNAdistance-result.txt and RNAdistance-backtrack.txt )\n"
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 
+        distance_f, distance_h, distance_w, distance_c, 
+        distance_big_f, distance_big_h, distance_big_w, 
+        distance_big_c, distance_big_p, backtrack_data 
+        FROM rna_distance_result WHERE task_id = %s
+        """, (analysis_id,))
+    result = cursor.fetchone()
+    conn.commit()
+    cursor.close()
+    conn.close()
+    if result:
+        (distance_f, distance_h, distance_w, distance_c,
+        distance_big_f, distance_big_h, distance_big_w,
+        distance_big_c, distance_big_p, backtrack_data) = result
+
+        formatted_result = (
+        f"\n\nRNAdistance_result.txt:\n {distance_f}  h: {distance_h}  w: {distance_w}  c: {distance_c}\n"
+        f"F: {distance_big_f}  H: {distance_big_h}  W: {distance_big_w}  C: {distance_big_c}  P: {distance_big_p}\n"
+        f"\n\nRNAdistance_backtrack:{backtrack_data}")
+
+        return formatted_result
+    else:
+        return f"file RNAdistance-result.txt and RNAdistance-backtrack.txt not found\n"
+
+def save_to_table_tree_result(analysis_id, file_path, scenerio):
+    id = str(uuid.uuid4())
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    cursor = conn.cursor()
+    logger.debug(file_path)
+    if scenerio == 1:
+        cursor.execute(
+            "INSERT INTO tree_result (id, task_id, tree_wt_url, tree_mut_url, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
+            (id, analysis_id, 'empty', file_path, 'in_progress')
+        )
+        logger.debug(f"INSERT INTO tree_result (id, task_id, tree_wt_url, tree_mut_url, created_at, processing_status) VALUES ({id}, {analysis_id}, 'empty', {file_path}, NOW(), 'in_progress')")
+    if scenerio == 2:
+        cursor.execute(
+        "SELECT COUNT(*) FROM tree_result WHERE task_id = %s",
+        (analysis_id,)
+        )
+        row_exists = cursor.fetchone()[0] > 0
+
+        if row_exists:
+            cursor.execute(
+                """
+                UPDATE tree_result
+                SET tree_wt_url = %s, processing_status = %s
+                WHERE task_id = %s
+                """,
+                (file_path, 'completed', analysis_id)
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO tree_result (id, task_id, tree_wt_url, tree_mut_url, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
+                (id, analysis_id, file_path, 'empty', 'error')
+            )
+    if scenerio == 3:
+        cursor.execute(
+            """
+            UPDATE tree_result
+            SET processing_status = %s
+            WHERE task_id = %s
+            """,
+            ('error', analysis_id)
+        )
+    if scenerio == 4:
+        cursor.execute(
+            "INSERT INTO tree_result (id, task_id, tree_wt_url, tree_mut_url, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
+            (id, analysis_id, 'empty', 'empty', 'error')
+        )
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Result added successfully!"}), 201
+
+def save_to_table_rna_plot_result(analysis_id, file_path, scenerio):
+    id = str(uuid.uuid4())
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    cursor = conn.cursor()
+
+    if scenerio == 1:
+        cursor.execute(
+            "INSERT INTO rna_plot_result (id, task_id, wild_type_url, mutant_url, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
+            (id, analysis_id, 'empty', file_path, 'in_progress')
+        )
+        logger.debug(f"INSERT INTO rna_plot_result (id, task_id, wild_type_url, mutant_url, created_at, processing_status) VALUES ({id}, {analysis_id}, 'empty', {file_path}, NOW(), 'in_progress')")
+    if scenerio == 2:
+        cursor.execute(
+        "SELECT COUNT(*) FROM rna_plot_result WHERE task_id = %s",
+        (analysis_id,)
+    )
+        row_exists = cursor.fetchone()[0] > 0
+
+        if row_exists:
+            cursor.execute(
+                """
+                UPDATE rna_plot_result
+                SET wild_type_url = %s, processing_status = %s
+                WHERE task_id = %s
+                """,
+                (file_path, 'completed', analysis_id)
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO rna_plot_result (id, task_id, wild_type_url, mutant_url, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
+                (id, analysis_id, file_path, 'empty', 'error')
+            )
+    if scenerio == 3:
+        cursor.execute(
+            """
+            UPDATE rna_plot_result
+            SET processing_status = %s
+            WHERE task_id = %s
+            """,
+            ('error', analysis_id)
+        )
+    if scenerio == 4:
+        cursor.execute(
+            "INSERT INTO rna_plot_result (id, task_id, wild_type_url, mutant_url, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
+            (id, analysis_id, 'empty', 'empty', 'error')
+        )
+        
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Result added successfully!"}), 201
+
+def save_to_table_rna_fold_result(analysis_id, wild_type_dot_bracket, mutant_dot_bracket, wild_type_energy, mutant_energy, processing_status, scenerio):
+    id = str(uuid.uuid4())
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    cursor = conn.cursor()
+    
+    logger.debug(f"INSERT INTO rna_fold_result (id, task_id, wild_type_dot_bracket, mutant_dot_bracket, wild_type_energy, mutant_energy, created_at, processing_status) VALUES ({id}, {analysis_id}, {wild_type_dot_bracket}, {mutant_dot_bracket}, {wild_type_energy}, {mutant_energy}, {processing_status})")
+
+    if scenerio == 1:
+        cursor.execute(
+            "INSERT INTO rna_fold_result (id, task_id, wild_type_dot_bracket, mutant_dot_bracket, wild_type_energy, mutant_energy, created_at, processing_status) VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s)",
+            (id, analysis_id, wild_type_dot_bracket, mutant_dot_bracket, wild_type_energy, mutant_energy, processing_status)
+        )
+    if scenerio == 2:
+        cursor.execute(
+        "SELECT COUNT(*) FROM rna_fold_result WHERE task_id = %s",
+        (analysis_id,)
+    )
+        row_exists = cursor.fetchone()[0] > 0
+
+        if row_exists:
+            cursor.execute(
+                """
+                UPDATE rna_fold_result
+                SET wild_type_dot_bracket = %s, wild_type_energy = %s, processing_status = %s
+                WHERE task_id = %s
+                """,
+                (wild_type_dot_bracket, wild_type_energy, processing_status, analysis_id)
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO rna_fold_result (id, task_id, wild_type_dot_bracket, mutant_dot_bracket, wild_type_energy, mutant_energy, created_at, processing_status)
+                VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s)
+                """,
+                (id, analysis_id, wild_type_dot_bracket, 'empty', wild_type_energy, 0, 'error')
+            )
+
+    if scenerio == 3:
+        cursor.execute(
+            "INSERT INTO rna_fold_result (id, task_id, wild_type_dot_bracket, mutant_dot_bracket, wild_type_energy, mutant_energy, created_at, processing_status) VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s)",
+            (id, analysis_id, 'empty', 'empty', 0, 0, 'error')
+        )
+    if scenerio == 4:
+        cursor.execute(
+            """
+            UPDATE rna_fold_result
+            SET processing_status = %s
+            WHERE task_id = %s
+            """,
+            ('error', analysis_id)
+        )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Result added successfully!"}), 201
+
+def save_to_table_rna_distance_result(analysis_id, params, backtrack_data, processing_status):
+    id = str(uuid.uuid4())
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    
+    cursor = conn.cursor()
+
+    if params == 'empty' and processing_status == 'error':
+        cursor.execute(
+            "INSERT INTO rna_distance_result (id, task_id, distance_f, distance_h, distance_w, distance_c, distance_big_f, distance_big_h, distance_big_w, distance_big_c, distance_big_p, backtrack_data, created_at, processing_status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)",
+            (id, analysis_id, 0, 0, 0, 0, 0, 0, 0, 0, 0, backtrack_data,processing_status)
+        )
+    if params != 'empty' and processing_status == 'in_progress':
+        cursor.execute(
+            "INSERT INTO rna_distance_result (id, task_id, distance_f, distance_h, distance_w, distance_c, distance_big_f, distance_big_h, distance_big_w, distance_big_c, distance_big_p, backtrack_data, created_at, processing_status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)",
+            (id, analysis_id, params['f'], params['h'], params['w'], params['c'], params['F'], params['H'], params['W'], params['C'], params['P'], backtrack_data,processing_status)
+        )
+    if params == 'empty' and backtrack_data != 'empty':
+        cursor.execute(
+            """
+            UPDATE rna_distance_result
+            SET backtrack_data = %s, processing_status = %s
+            WHERE task_id = %s
+            """,
+            (backtrack_data, processing_status, analysis_id)
+        )
+    if params == 'null' and backtrack_data == 'empty':
+        cursor.execute(
+            """
+            UPDATE rna_distance_result
+            SET processing_status = %s
+            WHERE task_id = %s
+            """,
+            (processing_status, analysis_id)
+        )
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Result added successfully!"}), 201
 
 
+def save_to_table_rna_pdist_result(analysis_id, distance, processing_status):
+    id = str(uuid.uuid4())
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO rna_pdist_result (id, task_id, distance, created_at, processing_status) VALUES (%s, %s, %s, NOW(), %s)",
+        (id, analysis_id, distance, processing_status)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Result added successfully!"}), 201
+
+
+def update_table_top_10(analysis_id, mutant_sequence, rank_snp, processing_status):
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    cursor = conn.cursor()
+    cursor.execute(
+    """
+    UPDATE top_10
+    SET processing_status = CASE
+            WHEN processing_status != 'completed' THEN %s
+            ELSE processing_status
+        END,
+        mutant_sequence = CASE
+            WHEN mutant_sequence = 'empty' THEN %s
+            ELSE mutant_sequence
+        END
+    WHERE wild_type_seq_id = %s AND rank_snp = %s
+    """,
+    (processing_status, mutant_sequence, analysis_id, str(rank_snp))
+)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Status update successfully!"}), 201
+
+def save_to_table_top_10(id, analysis_id, mutated_sequence, rank, processing_status):
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO top_10 (id, wild_type_seq_id, mutant_sequence, rank_snp, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
+        (id, analysis_id, mutated_sequence, rank, processing_status)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Result added successfully!"}), 201
+
+def update_table_pair(analysis_id, processing_status):
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    cursor = conn.cursor()
+    if processing_status != 'completed':
+        cursor.execute(
+                """
+                UPDATE pair
+                SET processing_status = %s
+                WHERE id = %s
+                """,
+                (processing_status, analysis_id) 
+            )
+    if processing_status == 'completed':
+        cursor.execute(
+    """
+    UPDATE pair
+    SET processing_status = 
+        CASE
+            WHEN (
+                -- Sprawdzenie, czy w każdej tabeli istnieje dokładnie jeden rekord powiązany
+                (SELECT COUNT(*) FROM rna_pdist_result rpd WHERE rpd.task_id = pair.id) = 1
+                AND
+                (SELECT COUNT(*) FROM rna_distance_result rdr WHERE rdr.task_id = pair.id) = 1
+                AND
+                (SELECT COUNT(*) FROM rna_fold_result rfr WHERE rfr.task_id = pair.id) = 1
+                AND
+                (SELECT COUNT(*) FROM rna_plot_result rpr WHERE rpr.task_id = pair.id) = 1
+                AND
+                (SELECT COUNT(*) FROM tree_result tr WHERE tr.task_id = pair.id) = 1
+                -- Sprawdzenie, czy rekordy mają status 'completed'
+                AND
+                (SELECT processing_status FROM rna_pdist_result rpd WHERE rpd.task_id = pair.id) = 'completed'
+                AND
+                (SELECT processing_status FROM rna_distance_result rdr WHERE rdr.task_id = pair.id) = 'completed'
+                AND
+                (SELECT processing_status FROM rna_fold_result rfr WHERE rfr.task_id = pair.id) = 'completed'
+                AND
+                (SELECT processing_status FROM rna_plot_result rpr WHERE rpr.task_id = pair.id) = 'completed'
+                AND
+                (SELECT processing_status FROM tree_result tr WHERE tr.task_id = pair.id) = 'completed'
+            )
+            THEN 'completed'
+            ELSE 'error'
+        END
+    WHERE id = %s
+    """,
+    (analysis_id,)
+)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Status update successfully!"}), 201
+
+def save_to_table_pair(analysis_id, wild_sequence, mutant_sequence, processing_status):
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO pair (id, wild_type_sequence, mutant_sequence, created_at, processing_status) VALUES (%s, %s, %s, NOW(), %s)",
+        (analysis_id,wild_sequence,mutant_sequence, processing_status)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Result added successfully!"}), 201
+
+def update_table_single(analysis_id, processing_status):
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    cursor = conn.cursor()
+    cursor.execute(
+            """
+            UPDATE single
+            SET processing_status = %s
+            WHERE id = %s
+            """,
+            (processing_status, analysis_id) 
+        )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Status update successfully!"}), 201
+
+def save_to_table_single(analysis_id, wild_sequence, processing_status):
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO single (id, wild_type_sequence, created_at, processing_status) VALUES (%s, %s, NOW(), %s)",
+        (analysis_id,wild_sequence,processing_status)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Result added successfully!"}), 201
+
+# Konfiguracja połączenia z bazą danych
+db_config = {
+    'host': os.getenv('MYSQL_HOST', 'mysql'),
+    'user': os.getenv('MYSQL_USER', 'root'),
+    'password': os.getenv('MYSQL_PASSWORD', 'qwas'),
+    'database': os.getenv('MYSQL_DATABASE', 'SNPsniper_database')
+}
+# Funkcja do uzyskania połączenia z bazą danych
+def connect_to_database():
+    try:
+        conn = mysql.connector.connect(**db_config)
+        return conn
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return None
+    
+# Test polaczenia
+@app.route('/test-db')
+def test_db():
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    cursor = conn.cursor()
+    cursor.execute("SELECT DATABASE();")
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return jsonify(result)
 
 def run_step(step_name, command, cwd, analysis_id):
     try:
@@ -29,12 +555,17 @@ def run_step(step_name, command, cwd, analysis_id):
     except subprocess.CalledProcessError as e:
         logger.error(f"{step_name} failed: {e}")
         socketio.emit('task_status', {'analysis_id': analysis_id, 'status': 'failed', 'step': step_name, 'error': str(e)}, broadcast=True, namespace=f'/{analysis_id}')
+        with app.app_context():
+            update_table_pair(analysis_id, 'error')
         return False
     return True
 
 
 
 def run_pipeline(mutant_sequence, wild_sequence, analysis_id):
+    with app.app_context():
+        update_table_pair(analysis_id, 'in_progress')
+
     pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
     os.makedirs(pipeline_dir, exist_ok=True)
     
@@ -62,11 +593,176 @@ def run_pipeline(mutant_sequence, wild_sequence, analysis_id):
         if not run_step(step_name, command, pipeline_dir, analysis_id):
             return
 
+    #with app.app_context():
+    #   update_table_pair(analysis_id, 'completed')  #tutaj złe miejsce musi byc po funkcji twojej i opcja ze error jesli w innej jest errorr
+
+    save_from_file_to_database(analysis_id)
+    with app.app_context():
+        update_table_pair(analysis_id, 'completed')
     socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
 
+def parse_rnadistance_result_safe(text):
+    pattern = r"(?P<param>[fFhHcCwWP]):\s*(-?\d+\.?\d*)?"
 
+    matches = re.findall(pattern, text)
 
-@app.route('/api/analyze/pair', methods=['POST'])
+    default_values = {
+        'f': 0.0, 'h': 0.0, 'w': 0.0, 'c': 0.0,
+        'F': 0.0, 'H': 0.0, 'W': 0.0, 'C': 0.0, 'P': 0.0
+    }
+
+    for param, value in matches:
+        if value is not None:  
+            default_values[param] = float(value)
+
+    return default_values
+
+def extract_dot_bracket_and_energy(file_content):
+
+    lines = file_content.splitlines()
+    if len(lines) < 2:
+        raise ValueError("Zawartość pliku musi zawierać co najmniej dwie linie.")
+    
+    dot_bracket_line = lines[1].strip()
+    
+    match = re.match(r'([\.()\[\]]+)\s*\(\s*(-?\d+\.\d+)\s*\)', dot_bracket_line)
+    print(match)
+    if match:
+        dot_bracket_sequence = match.group(1)
+        energy = float(match.group(2))
+        return dot_bracket_sequence, energy
+    else:
+        raise ValueError("Nie udało się poprawnie wyodrębnić dot-bracket i energii.")
+    
+def save_from_file_to_database(analysis_id):
+    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+
+    if not os.path.exists(pipeline_dir):
+        return jsonify({'error': 'Analysis not found'}), 404
+
+    file_save_to_db_as_text = [
+        'RNApdist-result.txt',
+        'RNAdistance-result.txt',
+        'RNAdistance-backtrack.txt', 
+        'mut-dotbracket.txt',   
+        'wt-dotbracket.txt'
+    ]
+    file_save_to_db_as_path = [
+        'mut-dotbracket.svg',
+        'wt-dotbracket.svg',
+        'tree_mut.svg',
+        'tree_wt.svg'
+    ]
+    file_RNApdsit_found = False
+    file_RNAdistance_result_found = False
+    file_RNAdistance_backtrack_found = False
+    file_mut_dotbracket_found = False
+    file_wt_dotbracket_found = False
+    file_mut_dotbracket_svg_found = False
+    file_wt_dotbracket_svg_found = False
+    file_mut_tree_svg_found = False
+    file_wt_tree_svg_found = False
+    full_content = "" 
+
+    for filename in file_save_to_db_as_text:
+        file_path = os.path.join(pipeline_dir, filename)
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as file:
+                content = file.read()
+                full_content += f"=== {filename} ===\n{content}\n\n"
+                if filename == 'RNApdist-result.txt':
+                    file_RNApdsit_found = True
+                    try:
+                        with app.app_context():
+                            save_to_table_rna_pdist_result(analysis_id, float(content), 'completed')
+                    except ValueError:
+                        with app.app_context():
+                            save_to_table_rna_pdist_result(analysis_id, 0, 'error')
+                elif filename == 'RNAdistance-result.txt':
+                    file_RNAdistance_result_found = True
+                    params = parse_rnadistance_result_safe(content)
+                    with app.app_context():
+                        save_to_table_rna_distance_result(analysis_id, params, 'empty', 'in_progress')
+                elif filename == 'RNAdistance-backtrack.txt':
+                    file_RNAdistance_backtrack_found = True
+                    with app.app_context():
+                        save_to_table_rna_distance_result(analysis_id, 'empty', content, 'completed')
+                elif filename == 'mut-dotbracket.txt':
+                    file_mut_dotbracket_found = True
+                    mutant_dot_bracket, mutant_energy = extract_dot_bracket_and_energy(content)
+                    with app.app_context():
+                        save_to_table_rna_fold_result(analysis_id, 'empty', mutant_dot_bracket, 0, mutant_energy, 'in_progress', 1)
+                elif filename == 'wt-dotbracket.txt':
+                    file_wt_dotbracket_found = True
+                    wild_type_dot_bracket, wild_type_energy = extract_dot_bracket_and_energy(content)
+                    with app.app_context():
+                        save_to_table_rna_fold_result(analysis_id, wild_type_dot_bracket,'empty',wild_type_energy, 0, 'completed', 2)
+                else:
+                    logger.debug(f"{filename} not found")
+                    
+        else:
+            full_content += f"=== {filename} ===\nFile not found\n\n"
+
+    if not file_RNApdsit_found:
+        with app.app_context():
+            save_to_table_rna_pdist_result(analysis_id, 0, 'error')
+
+    if not file_RNAdistance_result_found:
+        with app.app_context():
+            save_to_table_rna_distance_result(analysis_id, 'empty', 'empty', 'error')
+    
+    if not file_RNAdistance_backtrack_found:
+        with app.app_context():
+            save_to_table_rna_distance_result(analysis_id, 'null', 'empty', 'error')
+    
+    if not file_mut_dotbracket_found and not file_wt_dotbracket_found:
+        with app.app_context():
+            save_to_table_rna_fold_result(analysis_id, 'empty', 'empty', 0, 0, 'error', 3)
+
+    if not file_wt_dotbracket_found and file_mut_dotbracket_found:
+        with app.app_context():
+            save_to_table_rna_fold_result(analysis_id, 'not_exists', 'empty', 0, 0, 'error', 4)
+
+    for filename in file_save_to_db_as_path:
+        file_path = os.path.join(pipeline_dir, filename)
+        logger.debug(f"ania1 {file_path}")
+        if os.path.exists(file_path):
+            if filename == 'mut-dotbracket.svg':
+                file_mut_dotbracket_svg_found = True
+                with app.app_context():
+                    save_to_table_rna_plot_result(analysis_id, file_path, 1)
+            elif filename == 'wt-dotbracket.svg':
+                file_wt_dotbracket_svg_found = True
+                with app.app_context():
+                    save_to_table_rna_plot_result(analysis_id, file_path, 2)
+            elif filename == 'tree_mut.svg':
+                file_mut_tree_svg_found = True
+                with app.app_context():
+                    save_to_table_tree_result(analysis_id, file_path, 1)
+            elif filename == 'tree_wt.svg':
+                file_wt_tree_svg_found = True
+                with app.app_context():
+                    save_to_table_tree_result(analysis_id, file_path, 2)
+            else:
+                logger.debug(f"{filename} not found")
+
+    if not file_mut_dotbracket_svg_found and not file_wt_dotbracket_svg_found:
+        with app.app_context():
+            save_to_table_rna_plot_result(analysis_id, 'empty', 4)
+
+    if not file_wt_dotbracket_svg_found and file_mut_dotbracket_svg_found:
+        with app.app_context():
+            save_to_table_rna_plot_result(analysis_id, 'empty', 3)
+    
+    if not file_mut_tree_svg_found and not file_wt_tree_svg_found:
+        with app.app_context():
+            save_to_table_tree_result(analysis_id, 'empty', 4)
+
+    if not file_wt_tree_svg_found and file_mut_tree_svg_found:
+        with app.app_context():
+            save_to_table_tree_result(analysis_id, 'empty', 3)
+
+@app.route('/api/analyze/pair', methods=['POST'])  # ze start pair
 def analyze_pair():
     data = request.get_json()
     if not data:
@@ -81,7 +777,9 @@ def analyze_pair():
 
     analysis_id = str(uuid.uuid4())
     socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
-    
+    with app.app_context():
+            save_to_table_pair(analysis_id, wild_sequence, mutant_sequence, 'pending')
+            #penidng daj inny tavbelom
     threading.Thread(target=run_pipeline, args=(mutant_sequence, wild_sequence, analysis_id)).start()
     
     return jsonify({"analysis_id": analysis_id}), 200
@@ -89,56 +787,42 @@ def analyze_pair():
 
 
 @app.route('/api/results/pair/<analysis_id>', methods=['GET'])
-def get_combined_text(analysis_id):
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-
-    if not os.path.exists(pipeline_dir):
-        return jsonify({'error': 'Analysis not found'}), 404
-
-    filenames = [
-        'RNApdist-result.txt',
-        'RNAdistance-result.txt',
-        'RNAdistance-backtrack.txt'
-    ]
-
+def read_from_databse(analysis_id):
     combined_content = ""
-    for filename in filenames:
-        file_path = os.path.join(pipeline_dir, filename)
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as file:
-                combined_content += f"=== {filename} ===\n{file.read()}\n\n"
-        else:
-            combined_content += f"=== {filename} ===\nFile not found\n\n"
+    combined_content += read_from_table_rna_pdist_result(analysis_id)
+    combined_content += read_from_table_rna_distance_result(analysis_id)
+    return jsonify({"content": combined_content})
 
-    return jsonify({'content': combined_content})
 
 
 
 @app.route('/api/results/pair/<analysis_id>/rna-plot-mut', methods=['GET'])
 def get_svg_mut(analysis_id):
-    return get_svg(analysis_id, 'mut-dotbracket.svg')
+    return get_svg_from_database(analysis_id, 'mut-dotbracket.svg')
 
 @app.route('/api/results/pair/<analysis_id>/rna-plot-wt', methods=['GET'])
 def get_svg_wt(analysis_id):
-    return get_svg(analysis_id, 'wt-dotbracket.svg')
+    return get_svg_from_database(analysis_id, 'wt-dotbracket.svg')
 
 @app.route('/api/results/pair/<analysis_id>/hit-tree_wt', methods=['GET'])
 def get_svg_hit_tree_wt(analysis_id):
-    return get_svg(analysis_id, 'tree_wt.svg')
+    return get_svg_from_database(analysis_id, 'tree_wt.svg')
 
 @app.route('/api/results/pair/<analysis_id>/hit-tree_mut', methods=['GET'])
 def get_svg_hit_tree_mut(analysis_id):
-    return get_svg(analysis_id, 'tree_mut.svg')
+    return get_svg_from_database(analysis_id, 'tree_mut.svg')
 
-def get_svg(analysis_id, filename):
-    pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    svg_path = os.path.join(pipeline_dir, filename)
+def get_svg_from_database(analysis_id, filename):
+    if filename == 'mut-dotbracket.svg' or filename == 'wt-dotbracket.svg':
+        svg_path = extract_mut_or_wt_dotbracket_svg_from_database(analysis_id, filename)
+    
+    if filename == 'tree_wt.svg' or filename == 'tree_mut.svg':
+        svg_path = extract_mut_or_wt_tree_svg_from_database(analysis_id, filename)
 
     if not os.path.exists(svg_path):
         return jsonify({'error': 'SVG file not found'}), 404
 
     return send_file(svg_path, mimetype='image/svg+xml')
-
 
 
 @app.route('/api/analyze/single', methods=['POST'])
@@ -155,6 +839,11 @@ def analyze_single():
 
     analysis_id = str(uuid.uuid4())
     socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
+    with app.app_context():
+            save_to_table_single(analysis_id, wild_sequence, 'pending')
+            for rank in range(1, 11):
+                id = str(uuid.uuid4())   
+                save_to_table_top_10(id, analysis_id, 'empty', rank, 'pending')
     pipeline_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
     os.makedirs(pipeline_dir, exist_ok=True)
 
@@ -169,16 +858,22 @@ def analyze_single():
     def run_analysis():
         try:
             result = subprocess.run(
-                ['python3', os.path.join(BASE_DIR, 'pipeline', 'script.py'), pipeline_dir],
+                ['python3', os.path.join(BASE_DIR, 'pipeline', 'script.py'), pipeline_dir, analysis_id],
                 check=True,
                 capture_output=True,
                 text=True
             )
             output = result.stdout
             logger.debug(f"Script output: {output}")
+            with app.app_context():  
+                update_table_single(analysis_id, 'completed') 
             socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
         except subprocess.CalledProcessError as e:
             logger.error(f"Error while running script: {e.stderr}")
+            with app.app_context():  
+                update_table_single(analysis_id, 'error')
+                for rank in range(1, 11):   
+                    update_table_top_10(analysis_id, 'empty', str(rank), 'error')
             socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis failed"}, broadcast=True, namespace=f'/{analysis_id}')
 
     
