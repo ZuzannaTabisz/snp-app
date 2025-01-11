@@ -10,3 +10,4 @@ pandas
 graphviz
 requests
 scipy
+mysql-connector-python
