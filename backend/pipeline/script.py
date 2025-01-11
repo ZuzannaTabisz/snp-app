@@ -1,16 +1,9 @@
-import argparse
 import pandas as pd
 import subprocess
 import os
-import sys
 import logging
-import numpy as np
-import scipy.stats as stats
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import uuid
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(parent_dir)
-from app import app, update_table_single, update_table_top_10
+import shutil
+import tempfile
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -18,7 +11,6 @@ logger = logging.getLogger(__name__)
 def generate_mutations(sequence):
     nucleotides = ['A', 'C', 'G', 'U']
 
-    
     for i in range(len(sequence)):
         for nucleotide in nucleotides:
             if nucleotide != sequence[i]:
@@ -26,87 +18,24 @@ def generate_mutations(sequence):
                 key = f"{sequence[i]}_{i+1}_{nucleotide}"
                 yield key, mutated_sequence
 
-    
     for i in range(len(sequence)):
         mutated_sequence = sequence[:i] + sequence[i+1:]
         key = f"{sequence[i]}_{i+1}_-"
         yield key, mutated_sequence
 
-    #insertions    
+    # Insertions
     for i in range(len(sequence) + 1):
         for nucleotide in nucleotides:
             mutated_sequence = sequence[:i] + nucleotide + sequence[i:]
             key = f"-_{i+1}_{nucleotide}"
             yield key, mutated_sequence
 
-def run_command(command):
-    result = subprocess.run(command, capture_output=True, text=True, shell=True)
+def run_command(command, cwd=None):
+    result = subprocess.run(command, capture_output=True, text=True, shell=True, cwd=cwd)
     if result.returncode != 0:
         raise RuntimeError(f"Command failed: {command}\nError: {result.stderr.strip()}")
     return result.stdout.strip()
 
-def log_generated_files(directory, log_file="generated_files.log"):
-    with open(log_file, "a") as log:
-        log.write(f"Files generated in {directory}:\n")
-        for root, _, files in os.walk(directory):
-            for file in files:
-                log.write(f"{os.path.join(root, file)}\n")
-        log.write("\n")
-
-def process_mutation(key, mutation, script_directory, sequences_directory):
-    try:
-        
-        with open("mut.txt", 'w') as f:
-            f.write(mutation + '\n')
-
-        
-        try:
-            command = f'bash {os.path.join(script_directory,"pipeline", "01-RNApdist")}'
-            rnapdist_output = run_command(command)
-        except RuntimeError as e:
-            print(e)
-            rnapdist_output = "Error during RNApdist"
-
-        rnapdist_result_path = "RNApdist-result.txt"
-        if os.path.exists(rnapdist_result_path):
-            with open(rnapdist_result_path) as f:
-                rnapdist_output = f.read().strip()
-
-        
-        try:
-            command = f'bash {os.path.join(script_directory,"pipeline", "02-RNAfold")}'
-            run_command(command)
-        except RuntimeError as e:
-            print(e)
-
-        
-        log_generated_files(sequences_directory)
-
-        
-        try:
-            command = f'bash {os.path.join(script_directory,"pipeline", "03-RNAdistance")}'
-            run_command(command)
-        except RuntimeError as e:
-            print(e)
-
-        rnadistance_result_path = os.path.join(sequences_directory, "RNAdistance-result.txt")
-        if os.path.exists(rnadistance_result_path):
-            with open(rnadistance_result_path) as f:
-                rnadistance_output = f.read().strip().split()
-        else:
-            rnadistance_output = ["Error", "RNAdistance-result.txt not found."]
-
-        return {
-            'Mutation': key,
-            'RNApdist': rnapdist_output,
-            'RNAdistance(f)': rnadistance_output[1] if len(rnadistance_output) > 1 else "Error",
-            'Z-score': None
-        }
-
-    except Exception as e:
-        print(f"Error processing mutation {key}: {e}")
-        return None
-    
 def generate_mutated_sequences(wild_sequence, mutations):
     """
     Generuje listę zmutowanych sekwencji na podstawie sekwencji dzikiej i listy mutacji.
@@ -144,84 +73,78 @@ def generate_mutated_sequences(wild_sequence, mutations):
 
     return mutated_sequences
 
-def main():
+def process_mutation(key, mutation, script_directory, sequences_directory,wild_sequence):
+    try:
+        logger.debug(f"Processing mutation: {key}")
 
-    parser = argparse.ArgumentParser(description="Script to process RNA mutations and analyze results.")
-    parser.add_argument("path", help="Path to the directory containing sequence files.")
-    parser.add_argument("analysis_id", help="Unique ID for the analysis.")
-    args = parser.parse_args()
+        
+        with tempfile.TemporaryDirectory(dir=sequences_directory) as mutation_dir:
+            
+            wt_filename = os.path.join(mutation_dir, "wt.txt")
+            with open(wt_filename, 'w') as f:
+                f.write(wild_sequence + '\n')
+            logger.debug(f"Written wt to {wt_filename}")
 
-    analysis_id = args.analysis_id
-    sequences_directory = args.path
-    script_directory = os.getcwd()
-    os.chdir(sequences_directory)
+            
+            mut_filename = os.path.join(mutation_dir, "mut.txt")
+            with open(mut_filename, 'w') as f:
+                f.write(mutation + '\n')
+            logger.debug(f"Written mutation to {mut_filename}")
 
+            
+            try:
+                command = f'bash {os.path.join(script_directory, "01-RNApdist")}'
+                run_command(command, cwd=mutation_dir)
+            except RuntimeError as e:
+                logger.error(f"Error during RNApdist: {e}")
+                rnapdist_output = "Error during RNApdist"
 
-    with open("wt.txt", 'r') as f:
-        original_sequence = f.readline().strip()
-        with app.app_context():  
-            update_table_single(analysis_id, 'in_progress')
-            for rank in range(1, 11):   
-                update_table_top_10(analysis_id, 'empty', str(rank), 'in_progress')
-    mutations = generate_mutations(original_sequence)
-    
+            rnapdist_result_path = os.path.join(mutation_dir, "RNApdist-result.txt")
+            if os.path.exists(rnapdist_result_path):
+                with open(rnapdist_result_path) as f:
+                    rnapdist_output = f.read().strip()
+                logger.debug(f"RNApdist result read from {rnapdist_result_path}: {rnapdist_output}")
+            else:
+                rnapdist_output = "Error: RNApdist-result.txt not found"
+                logger.error(rnapdist_output)
 
-    results = []
-    arr_pdist = []
-    arr_distance = []
+            
+            try:
+                command = f'bash {os.path.join(script_directory, "02-RNAfold")}'
+                run_command(command, cwd=mutation_dir)
+                logger.debug("RNAfold command executed successfully")
+            except RuntimeError as e:
+                logger.error(f"Error during RNAfold: {e}")
 
-    
-    with ThreadPoolExecutor() as executor:
-        future_to_mutation = {
-            executor.submit(process_mutation, key, mutation, script_directory, sequences_directory): (key, mutation)
-            for key, mutation in mutations
-        }
+           
+            try:
+                command = f'bash {os.path.join(script_directory, "03-RNAdistance")}'
+                run_command(command, cwd=mutation_dir)
+                logger.debug("RNAdistance command executed successfully")
+            except RuntimeError as e:
+                logger.error(f"Error during RNAdistance: {e}")
 
-        for future in as_completed(future_to_mutation):
-            result = future.result()
-            if result:
-                results.append(result)
-                rnapdist_value = result['RNApdist']
-                rnadistance_value = result['RNAdistance(f)']
+            rnadistance_result_path = os.path.join(mutation_dir, "RNAdistance-result.txt")
+            if os.path.exists(rnadistance_result_path):
+                with open(rnadistance_result_path) as f:
+                    rnadistance_output = f.read().strip().split()
+                logger.debug(f"RNAdistance result read from {rnadistance_result_path}: {rnadistance_output}")
+            else:
+                rnadistance_output = ["Error", "RNAdistance-result.txt not found"]
+                logger.error(rnadistance_output)
 
-                arr_pdist.append(float(rnapdist_value) if rnapdist_value.replace('.', '', 1).isdigit() else np.nan)
-                arr_distance.append(float(rnadistance_value) if rnadistance_value.replace('.', '', 1).isdigit() else np.nan)
-
-    
-    arr_pdist = np.array(arr_pdist)
-    arr_distance = np.array(arr_distance)
-
-    arr_pdist = stats.zscore(arr_pdist, nan_policy='omit')
-    arr_distance = stats.zscore(arr_distance, nan_policy='omit')
-
-    
-    ten_best = pd.DataFrame(columns=['no', 'Mutation', 'RNApdist', 'RNAdistance(f)', 'Z-score'])
-    for elem in range(len(arr_distance)):
-        if not np.isnan(arr_distance[elem]) and not np.isnan(arr_pdist[elem]):
-            score = arr_distance[elem] + arr_pdist[elem]
-            new_row = {
-                'no': elem + 1,
-                'Mutation': results[elem]['Mutation'],
-                'RNApdist': arr_pdist[elem],
-                'RNAdistance(f)': arr_distance[elem],
-                'Z-score': score
+            return {
+                'Mutation': key,
+                'RNApdist': float(rnapdist_output) if rnapdist_output.replace('.', '', 1).replace('e-', '', 1).isdigit() else "Error",
+                'RNAdistance(f)': float(rnadistance_output[1]) if len(rnadistance_output) > 1 and rnadistance_output[1].replace('.', '', 1).replace('e-', '', 1).isdigit() else "Error",
+                'Z-score': None
             }
-            ten_best = pd.concat([ten_best, pd.DataFrame([new_row])], ignore_index=True)
 
-    ten_best = ten_best.sort_values(by='Z-score', ascending=False).head(10)
-    mutations = ten_best['Mutation'].tolist()
-    mutated_sequences = generate_mutated_sequences(original_sequence, mutations)
-    with app.app_context():
-        rank = 1
-        for mutated_sequence in mutated_sequences: 
-            update_table_top_10(analysis_id, mutated_sequence, rank, 'completed')
-            rank += 1
-    ten_best.to_csv("ten_best_results.csv", index=False)
-
-    results_df = pd.DataFrame(results)
-    output_csv_path = os.path.join(sequences_directory, "mutation_results.csv")
-    results_df.to_csv(output_csv_path, index=False)
-    print(f"Zakończono generowanie mutacji i zapis wyników do {output_csv_path}.")
-
-if __name__ == "__main__":
-    main()
+    except Exception as e:
+        logger.error(f"Error processing mutation {key}: {e}")
+        return {
+            'Mutation': key,
+            'RNApdist': "Error",
+            'RNAdistance(f)': "Error",
+            'Z-score': None
+        }
