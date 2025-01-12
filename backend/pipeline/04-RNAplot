@@ -61,12 +61,18 @@ function plot {
 }
 
 
-
-
 plot wt-dotbracket.txt mut-dotbracket.txt
 
 
+wt_check=$(awk 'NR==2 {print $1}' wt-dotbracket.txt | grep -q '[^.]' && echo true || echo false)
+mut_check=$(awk 'NR==2 {print $1}' mut-dotbracket.txt | grep -q '[^.]' && echo true || echo false)
 
+awk 'NR==2 {print $1}' wt-dotbracket.txt
+awk 'NR==2 {print $1}' mut-dotbracket.txt
+echo "wt_check: $wt_check"
+echo "mut_check: $mut_check"
+
+if [ "$wt_check" = true ] || [ "$mut_check" = true ]; then
 
 "$SCRIPT_DIR/98-find-domains" "wt-dotbracket.txt" "mut-dotbracket.txt"
 
@@ -90,3 +96,4 @@ for wt in wt-dotbracket-*.txt; do
         plot "${wt##*/}" "${min_mut##*/}"
     fi
 done
+fi

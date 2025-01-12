@@ -11,8 +11,38 @@ const PairPage = () => {
   const [fetchDbSnp, setFetchDbSnp] = useState(false);
   const router = useRouter();
 
-  const MAX_SEQUENCE_LENGTH = 10000;  
+  const MAX_SEQUENCE_LENGTH = 10000;
+  const MIN_SEQUENCE_LENGTH = 10;
 
+  const handleExampleClick = (example: number) => {
+    // ddx11-rs14330
+      if (example === 1) {
+          setMutantSequence(
+              "TGGGCAACCACACCACTGCCTGGCGCCGTGCCCTTCCTTTGTCCTGCCCGCTGGAGACAGTGTTTGTCGTGGGCGTGGTCTGCGGGGATCCTGTTACAAAGGTGAAACCCAGGAGGAGAGTGTGGAGTCCAGAGTGCTGCCAGGACCCAGGCACAGGCGTTAGCTCCCGTAGGAGAAAATGCGGGAATCCTGAATGAACAGTGGGTCCTGGCTGTCCTTGGGGCGTTCCAGGGCAGCTCCCCTCCTGGAATAGAATCTTTCTTTCCATCCTGCATGGCTGAGAGCCAGGCTTCCTTCCTGGTCTCCGCAGGAGGCTGTGGCAGCTGTGGCATCCACTGTGGCATCTCCGTCCTGCCCACCTTCTTAAGAGGCGAGATGGAGCAGGCCCATCTGCCTCTGCCCTTTCTAGCCAAGGTTATAGCTGCCCTGGACTGCTCACTCTCTGGTCTCAATTTAAAATGATCCATGGCCACAGGGCTCCTGCCCAGGGGCTTGTCACCTTCCCCTCCTCCTTCCTGAGTCACTCCTTCAGTAGAAGGCCCTGCTCCCTATCCTGTCCCACAGCCCTGCCTGGATTTGTATCCTTGGCTTCGTGCCAGTTCCTCCAAGTCTATGGCACCTCCCTCCCTCTCAACCACTTGAGCAAACTCCAAGACACCTTCTACCCCAACACCAGCAATTATGCCAAGGGCCGTTAGGCTCTCAACATGACTATAGAGACCCCGTGTCATCACGGAGACCTTTGTTCCTGTGGGAAAATATCCCTCCCACCTGCAACAGCTGCCCCTGCTGACTGCGCCTGTCTTCTCCCTCTGACCCCAGAGAAAGGGGCTGTGGTCAGCTGGGATCTTCTGCCACCATCAGGGACAAACGGGGGCAGGAGGAAAGTCACTGATGCCCAGATGTTTGCATCCTGCACAGCTATAGGTCCTTAAATAAAAGTGTGCTGTTGGTTTCTGCTGA"
+          );
+          setWildSequence(
+              "TGGGCAACCACACCACTGCCTGGCGCCGTGCCCTTCCTTTGTCCTGCCCGCTGGAGACAGTGTTTGTCGTGGGCGTGGTCTGCGGGGATCCTGTTACAAAGGTGAAACCCAGGAGGAGAGTGTGGAGTCCAGAGTGCTGCCAGGACCCAGGCACAGGCGTTAGCTCCCGTAGGAGAAAATGGGGGAATCCTGAATGAACAGTGGGTCCTGGCTGTCCTTGGGGCGTTCCAGGGCAGCTCCCCTCCTGGAATAGAATCTTTCTTTCCATCCTGCATGGCTGAGAGCCAGGCTTCCTTCCTGGTCTCCGCAGGAGGCTGTGGCAGCTGTGGCATCCACTGTGGCATCTCCGTCCTGCCCACCTTCTTAAGAGGCGAGATGGAGCAGGCCCATCTGCCTCTGCCCTTTCTAGCCAAGGTTATAGCTGCCCTGGACTGCTCACTCTCTGGTCTCAATTTAAAATGATCCATGGCCACAGGGCTCCTGCCCAGGGGCTTGTCACCTTCCCCTCCTCCTTCCTGAGTCACTCCTTCAGTAGAAGGCCCTGCTCCCTATCCTGTCCCACAGCCCTGCCTGGATTTGTATCCTTGGCTTCGTGCCAGTTCCTCCAAGTCTATGGCACCTCCCTCCCTCTCAACCACTTGAGCAAACTCCAAGACACCTTCTACCCCAACACCAGCAATTATGCCAAGGGCCGTTAGGCTCTCAACATGACTATAGAGACCCCGTGTCATCACGGAGACCTTTGTTCCTGTGGGAAAATATCCCTCCCACCTGCAACAGCTGCCCCTGCTGACTGCGCCTGTCTTCTCCCTCTGACCCCAGAGAAAGGGGCTGTGGTCAGCTGGGATCTTCTGCCACCATCAGGGACAAACGGGGGCAGGAGGAAAGTCACTGATGCCCAGATGTTTGCATCCTGCACAGCTATAGGTCCTTAAATAAAAGTGTGCTGTTGGTTTCTGCTGA"
+          );
+    // vegfa-5utr
+      } else if (example === 2) {
+          setMutantSequence(
+              "GCGGAGGCTTGGGGCAGCCGGGTAGCTCGGAGGTCGTGGCGCTGGGGGCTAGCACCAGCGCTCTGTCGGGAGGCGCAGCGGTTAGGTGGACCGGTCAGCGGACTCACCGGCCAGGGCGCTCGGTGCTGGAATTTGATATTCATTGATCCGGGTTTTATCCCTCTTCTTTTTTCTTAAACATTTTTTTTTTAAAACTGTATTGTTTCTCGTTTTAATTTATTTTTGCTTGCCATTCCCCACTTGAATCGGGCCGACGGCTTGGGGAGATTGCTCTACTTCCCCAAATCACTGTGGATTTTGGAAACCAGCAGAAAGAGGAAAGAGGTAGCAAGAGCTCCAGAGAGAAGTCGAGGAAGAGAGAGACGGGGTCAGAGAGAGCGCGCGGGCGTGCGAGCAGCGAAAGCGACAGGGGCAAAGTGAGTGACCTGCTTTTGGGGGTGACCGCCGGAGCGCGGCGTGAGCCCTCCCCCTTGGGATCCCGCAGCTGACCAGTCGCG"
+          );
+          setWildSequence(
+              "GCGGAGGCTTGGGGCAGCCGGGTAGCTCGGAGGTCGTGGCGCTGGGGGCTAGCACCAGCGCTCTGTCGGGAGGCGCAGCGGTTAGGTGGACCGGTCAGCGGACTCACCGGCCAGGGCGCTCGGTGCTGGAATTTGATATTCATTGATCCGGGTTTTATCCCTCTTCTTTTTTCTTAAACATTTTTTTTTAAAACTGTATTGTTTCTCGTTTTAATTTATTTTTGCTTGCCATTCCCCACTTGAATCGGGCCGACGGCTTGGGGAGATTGCTCTACTTCCCCAAATCACTGTGGATTTTGGAAACCAGCAGAAAGAGGAAAGAGGTAGCAAGAGCTCCAGAGAGAAGTCGAGGAAGAGAGAGACGGGGTCAGAGAGAGCGCGCGGGCGTGCGAGCAGCGAAAGCGACAGGGGCAAAGTGAGTGACCTGCTTTTGGGGGTGACCGCCGGAGCGCGGCGTGAGCCCTCCCCCTTGGGATCCCGCAGCTGACCAGTCGCG"
+          );
+      } else if (example === 3) {
+          setMutantSequence(
+              "GGCUAGCUAUCGAUGCUAGCUAUGCUAGCGGAUCGGAUCGGAUCGGAUCGGAUCGAUCGAUCGAUGCGAUCGGAUCGAUGCGG"
+          );
+          setWildSequence(
+              "GGCUAGCUAUCGAUGCUAGCUAUGCUAGCGGAUCGGAUCGGAUCGGAUCGGAUCGAUCGAUCGAUGCGAUCGGAUCGAUGCGC"
+          );
+          //setDbSnpId("rs98765");
+      }
+      setError("");
+  };
+  
   //invalid characters are not allowed 
   // sequence should not contain both U and T, also there should be consistency in the use of U and T in mutant and wild type sequence
   const isValidSequence = (sequence: string, setError: (error: string) => void) => {
@@ -30,7 +60,6 @@ const PairPage = () => {
     return true;
   };
   
-
   const parseFileContent = (content: string, fileType: string) => {
     const lines = content.split("\n").map(line => line.trim());
     if (fileType === "fasta") {
@@ -38,11 +67,13 @@ const PairPage = () => {
       const sequence = sequenceLines.join("");
       if (!isValidSequence(sequence,setError)) throw new Error("Invalid FASTA sequence.");
       if (sequence.length > MAX_SEQUENCE_LENGTH) throw new Error(`Sequence is too long. Maximum length is ${MAX_SEQUENCE_LENGTH}.`);
+      if (sequence.length < MIN_SEQUENCE_LENGTH) throw new Error(`Sequence is too short. Minimum length is ${MIN_SEQUENCE_LENGTH}.`);
       return sequence;
     } else if (fileType === "txt") {
       const sequence = lines[0];
       if (!isValidSequence(sequence,setError)) throw new Error("Invalid TXT sequence.");
       if (sequence.length > MAX_SEQUENCE_LENGTH) throw new Error(`Sequence is too long. Maximum length is ${MAX_SEQUENCE_LENGTH}.`);
+      if (sequence.length < MIN_SEQUENCE_LENGTH) throw new Error(`Sequence is too short. Minimum length is ${MIN_SEQUENCE_LENGTH}.`);
       return sequence;
     } else {
       throw new Error("Unsupported file format.");
@@ -116,6 +147,7 @@ const PairPage = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("handleSubmit");
     e.preventDefault();
     setError("");
   
@@ -128,21 +160,30 @@ const PairPage = () => {
       setError(`Sequence length exceeds the maximum allowed length of ${MAX_SEQUENCE_LENGTH}.`);
       return;
     }
+
+    if (mutantSequence.length < MIN_SEQUENCE_LENGTH || wildSequence.length < MIN_SEQUENCE_LENGTH) {
+      setError(`Sequence length is below the minimum allowed length of ${MIN_SEQUENCE_LENGTH}.`);
+      return;
+    }
   
     //there should be consistency in the use of U and T in mutant and wild type sequence
     const containsT = (seq: string) => seq.includes('T');
     const containsU = (seq: string) => seq.includes('U');
-  
+    
     if ((containsT(mutantSequence) && containsU(mutantSequence)) || 
         (containsT(wildSequence) && containsU(wildSequence))) {
       setError("Sequences cannot contain both T and U.");
       return;
     }
-  
-    if ((containsT(mutantSequence) !== containsT(wildSequence)) || 
-        (containsU(mutantSequence) !== containsU(wildSequence))) {
-      setError("Mutant and wild-type sequences must consistently use T or U.");
-      return;
+    
+    const usesTOrU = (seq: string) => containsT(seq) || containsU(seq);
+    
+    if ((usesTOrU(mutantSequence) && usesTOrU(wildSequence))) {
+      if ((containsT(mutantSequence) !== containsT(wildSequence)) || 
+          (containsU(mutantSequence) !== containsU(wildSequence))) {
+        setError("Mutant and wild-type sequences must consistently use T or U.");
+        return;
+      }
     }
   
     try {
@@ -158,7 +199,7 @@ const PairPage = () => {
       });
   
       if (!response.ok) throw new Error("Failed to start analysis");
-      // response 
+  
       const responseData = await response.json();
       router.push(`/pair/${responseData.analysis_id}`);
     } catch (err: unknown) {
@@ -227,7 +268,31 @@ const PairPage = () => {
         >
           Search dbSNP
         </button>
-  
+
+        <button
+          type="button"
+          className={`mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 ${theme === 'dark' ? 'bg-orange-700 shadow-submit-dark' : 'bg-orange-500 hover:bg-orange-600'}`}
+          onClick={() => handleExampleClick(1)}
+        >
+          Example 1
+        </button>
+
+        <button
+          type="button"
+          className={`mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 ${theme === 'dark' ? 'bg-pink-700 shadow-submit-dark' : 'bg-pink-500 hover:bg-pink-600'}`}
+          onClick={() => handleExampleClick(2)}
+        >
+          Example 2
+        </button>
+
+        <button
+          type="button"
+          className={`mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 ${theme === 'dark' ? 'bg-purple-700 shadow-submit-dark' : 'bg-purple-500 hover:bg-purple-600'}`}
+          onClick={() => handleExampleClick(3)}
+        >
+          Example 3
+        </button>
+        
         <input
           type="submit"
           value="Submit"
