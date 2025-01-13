@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 export default function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);
 
-  // Top: 0 takes us all the way back to the top of the page
-  // Behavior: smooth keeps it smooth!
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -13,18 +11,24 @@ export default function ScrollToTop() {
   };
 
   useEffect(() => {
-    // Button is displayed after scrolling for 500 pixels
+    console.log("ScrollToTop component mounted");
+
     const toggleVisibility = () => {
-      if (window.pageYOffset > 300) {
+      if (window.scrollY > 300) {
         setIsVisible(true);
+        console.log("ScrollToTop button is visible");
       } else {
         setIsVisible(false);
+        console.log("ScrollToTop button is not visible");
       }
     };
 
     window.addEventListener("scroll", toggleVisibility);
 
-    return () => window.removeEventListener("scroll", toggleVisibility);
+    return () => {
+      console.log("ScrollToTop component unmounted");
+      window.removeEventListener("scroll", toggleVisibility);
+    };
   }, []);
 
   return (

@@ -9,7 +9,10 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 def generate_mutations(sequence):
-    nucleotides = ['A', 'C', 'G', 'U']
+    if 'T' in sequence:
+        nucleotides = ['A', 'C', 'G', 'T']
+    else:
+        nucleotides = ['A', 'C', 'G', 'U']
 
     for i in range(len(sequence)):
         for nucleotide in nucleotides:
@@ -134,6 +137,7 @@ def process_mutation(key, mutation, script_directory, sequences_directory,wild_s
                 logger.error(rnadistance_output)
 
             return {
+                
                 'Mutation': key,
                 'RNApdist': float(rnapdist_output) if rnapdist_output.replace('.', '', 1).replace('e-', '', 1).isdigit() else "Error",
                 'RNAdistance(f)': float(rnadistance_output[1]) if len(rnadistance_output) > 1 and rnadistance_output[1].replace('.', '', 1).replace('e-', '', 1).isdigit() else "Error",

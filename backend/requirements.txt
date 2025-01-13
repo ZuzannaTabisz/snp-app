@@ -11,3 +11,4 @@ graphviz
 requests
 scipy
 mysql-connector-python
+gunicorn

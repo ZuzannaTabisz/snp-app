@@ -42,10 +42,8 @@ services:
     networks:
       - backend
     extra_hosts:
-    #with nslookup
       - "clinicaltables.nlm.nih.gov:130.14.65.58"  # IPv4 address
       - "lforms-service-wip.lhcaws.nlm.nih.gov:130.14.65.58"  # Same address for alias
-    
     depends_on:
       - db
 

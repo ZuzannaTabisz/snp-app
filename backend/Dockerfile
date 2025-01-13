@@ -41,4 +41,6 @@ RUN chmod -R 777 pipeline
 EXPOSE 8080
 
 # running app
-CMD ["python", "app.py"]
+#CMD ["python", "app.py"]
+CMD ["gunicorn", "--workers", "1", "--worker-class", "eventlet", "--bind", "0.0.0.0:8080", "app:app"]
+

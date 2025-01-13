@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 
+
+
 const SinglePage = () => {
   const [wildSequence, setWildSequence] = useState("");
   const [dbSnpId, setDbSnpId] = useState("");
@@ -155,10 +157,10 @@ const SinglePage = () => {
       return;
     }
 
-    localStorage.setItem("wildSequence", wildSequence);
+
 
     try {
-      localStorage.setItem("wildSequence", wildSequence);
+
       const response = await fetch("http://localhost:8080/api/analyze/single", {
         method: "POST",
         headers: {
@@ -179,83 +181,93 @@ const SinglePage = () => {
   const { theme } = useTheme();
 
   return (
-    <div className={`relative z-10 rounded-sm p-8 shadow-three ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-black'} sm:p-11 lg:p-8 xl:p-11`}>
+    <div className="relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-800 dark:text-white sm:p-11 lg:p-8 xl:p-11">
       <h3 className="mb-4 text-2xl font-bold leading-tight mt-24">
         RNA Sequence Analysis
       </h3>
-      <p className={`mb-11 border-b pb-11 text-base leading-relaxed ${theme === 'dark' ? 'border-gray-600' : 'border-gray-200'}`}>
+      <p className="mb-11 border-b pb-11 text-base leading-relaxed border-gray-200 dark:border-gray-600">
         Please enter your RNA sequence for analysis.
       </p>
       {error && (
-        <p className={`mb-4 text-center text-lg font-medium ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
+        <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400">
           {error}
         </p>
       )}
+      
       <div>
         <input
           type="text"
           name="wildSequence"
           placeholder="Enter Wild-type RNA Sequence"
-          className={`mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary ${theme === 'dark' ? 'bg-gray-700 text-gray-300 border-transparent shadow-two' : 'bg-gray-100 text-black border-gray-300'}`}
+          aria-label="Wild-type RNA Sequence"
+          className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
           value={wildSequence}
           onChange={(e) => handleInputChange(e, setWildSequence)}
         />
         <input
           type="file"
           accept=".fasta,.txt"
-          className={`mb-4 w-full text-base outline-none focus:border-primary ${theme === 'dark' ? 'bg-gray-700 text-gray-300 border-transparent shadow-two' : 'bg-gray-100 text-black border-gray-300'}`}
+          aria-label="Upload RNA Sequence File"
+          className="mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
           onChange={(e) => handleFileUpload(e, setWildSequence)}
         />
+  
+        <div className="flex space-x-4">
+          <button
+            type="button"
+            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-orange-500 hover:bg-orange-600 dark:bg-orange-700 dark:shadow-submit-dark"
+            onClick={() => handleExampleClick(1)}
+          >
+            Example: rs12345
+          </button>
+  
+          <button
+            type="button"
+            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-pink-500 hover:bg-pink-600 dark:bg-pink-700 dark:shadow-submit-dark"
+            onClick={() => handleExampleClick(2)}
+          >
+            Example: rs67890
+          </button>
+  
+          <button
+            type="button"
+            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-purple-500 hover:bg-purple-600 dark:bg-purple-700 dark:shadow-submit-dark"
+            onClick={() => handleExampleClick(3)}
+          >
+            Example: rs98765
+          </button>
+        </div>
+  
         <input
           type="text"
           name="dbSnpId"
           placeholder="Enter dbSNP ID"
-          className={`mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary ${theme === 'dark' ? 'bg-gray-700 text-gray-300 border-transparent shadow-two' : 'bg-gray-100 text-black border-gray-300'}`}
+          aria-label="dbSNP ID"
+          className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
           value={dbSnpId}
           onChange={(e) => setDbSnpId(e.target.value)}
         />
         
+        <div className="flex flex-col space-y-4">
+          <button
+            type="button"
+            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-green-500 hover:bg-green-600 dark:bg-green-700 dark:shadow-submit-dark"
+            onClick={handleDbSnpSearch}
+          >
+            Search dbSNP
+          </button>
+        </div>
+  
         <button
-          type="button"
-          className={`mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 ${theme === 'dark' ? 'bg-green-700 shadow-submit-dark' : 'bg-green-500 hover:bg-green-600'}`}
-          onClick={handleDbSnpSearch}
-        >
-          Search dbSNP
-        </button>
-
-        <button
-          type="button"
-          className={`mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 ${theme === 'dark' ? 'bg-orange-700 shadow-submit-dark' : 'bg-orange-500 hover:bg-orange-600'}`}
-          onClick={() => handleExampleClick(1)}
-        >
-          Example 1
-        </button>
-
-        <button
-          type="button"
-          className={`mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 ${theme === 'dark' ? 'bg-pink-700 shadow-submit-dark' : 'bg-pink-500 hover:bg-pink-600'}`}
-          onClick={() => handleExampleClick(2)}
-        >
-          Example 2
-        </button>
-
-        <button
-          type="button"
-          className={`mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 ${theme === 'dark' ? 'bg-purple-700 shadow-submit-dark' : 'bg-purple-500 hover:bg-purple-600'}`}
-          onClick={() => handleExampleClick(3)}
-        >
-          Example 3
-        </button>
-        
-        <input
           type="submit"
-          value="Submit"
-          className={`mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 ${theme === 'dark' ? 'bg-blue-700 shadow-submit-dark' : 'bg-blue-500 hover:bg-blue-600'}`}
+          className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:shadow-submit-dark"
           onClick={handleSubmit}
-        />
+        >
+          Submit
+        </button>
       </div>
     </div>
-  );  
+  );
 };
 
 export default SinglePage;

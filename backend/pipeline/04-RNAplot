@@ -72,7 +72,7 @@ awk 'NR==2 {print $1}' mut-dotbracket.txt
 echo "wt_check: $wt_check"
 echo "mut_check: $mut_check"
 
-if [ "$wt_check" = true ] || [ "$mut_check" = true ]; then
+if [ "$wt_check" = true ] && [ "$mut_check" = true ]; then
 
 "$SCRIPT_DIR/98-find-domains" "wt-dotbracket.txt" "mut-dotbracket.txt"
 
