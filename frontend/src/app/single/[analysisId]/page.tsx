@@ -3,7 +3,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTheme } from "next-themes";
-import io from "socket.io-client";
+
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from "next/navigation";
 
 
 interface TaskStatus {
@@ -27,16 +29,21 @@ interface CombinedText {
 interface ApiResponse {
   csv_data: CombinedText;
   wt_sequence: string;
+  mutant_sequences: { [key: string]: string };
 }
 
 const AnalysisResults = () => {
   const { analysisId } = useParams();
-  const [message, setMessage] = useState<string>("");
+  //router params
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const wt_sequence = searchParams.get('wt_sequence');
   const [error, setError] = useState<string>("");
-  const [progress, setProgress] = useState(0);
+  
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [combinedText, setCombinedText] = useState<CombinedText | null>(null);
   const [wildSequence, setWildSequence] = useState<string | null>(null);
+  const [mutantSequences, setMutantSequences] = useState<{ [key: string]: string }>({});
   const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: "asc" | "desc" }>({
     key: null,
     direction: "asc",
@@ -44,35 +51,13 @@ const AnalysisResults = () => {
 
   const { theme } = useTheme();
 
+
+
+
   useEffect(() => {
-    const socket = io(`http://localhost:8080/${analysisId}`, {
-      transports: ["websocket"],
-      autoConnect: true,
-    });
-
-    socket.on("connect", () => {
-      console.log("WebSocket connected");
-    });
-
-    socket.on('progress_update', (data) => {
-      setProgress(data.progress);
-    });
-
-    socket.on("connect_error", (err: unknown) => {
-      console.error("WebSocket connection error:", err);
-    });
-
-    socket.on('task_status', (data: { analysis_id: string; status: string }) => {
-      console.log("WebSocket status update:", data);
-      if (data.analysis_id === analysisId) {
-        setMessage(data.status);
-      }
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [analysisId]);
+        setWildSequence(wt_sequence);
+        //setMessage("Analysis started");
+    }, [analysisId,wt_sequence]);
 
   const fetchResults = useCallback(async () => {
     try {
@@ -84,6 +69,7 @@ const AnalysisResults = () => {
       console.log("Fetched results:", data);
       setCombinedText(data.csv_data);
       setWildSequence(data.wt_sequence);
+      setMutantSequences(data.mutant_sequences);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An unknown error occurred while fetching combined text");
     }
@@ -103,11 +89,10 @@ const AnalysisResults = () => {
   }, [analysisId]);
 
   useEffect(() => {
-    if (analysisId) {
+
       console.log("Program reached the point where analysis is completed.");
       fetchResults();
       fetchResultsZIP();
-    }
   }, [analysisId, fetchResults, fetchResultsZIP]);
 
   const handleSort = (key: string) => {
@@ -128,6 +113,14 @@ const AnalysisResults = () => {
       return 0;
     }) || combinedText?.rows;
 
+    const handleRowClick = (row) => {
+      const mutantSequence = mutantSequences[row.no];
+      const query = new URLSearchParams({
+        mut_sequence: mutantSequence,
+        wt_sequence: wildSequence,
+      }).toString();
+      router.push(`/pair/?${query}`);
+    };
 
     return (
       <div className="relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-800 dark:text-white sm:p-11 lg:p-8 xl:p-11">
@@ -135,27 +128,12 @@ const AnalysisResults = () => {
           Analysis Results
         </h1>
     
-        {message && (
-          <p className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400">
-            Status: {message}
-          </p>
-        )}
+
         {error && (
           <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400">
             {error}
           </p>
         )}
-    
-        {/* Progress Bar */}
-        <div className="relative mb-6 h-4 rounded-full bg-gray-200 dark:bg-gray-700">
-          <div
-            className="absolute h-4 rounded-full transition-all duration-300 bg-green-400 dark:bg-green-500"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-        <p className="text-sm text-center">
-          {progress}% Completed
-        </p>
     
         <div className="mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
           <h3 className="text-xl font-semibold dark:text-white">Submitted Sequence:</h3>
@@ -193,15 +171,19 @@ const AnalysisResults = () => {
                 </tr>
               </thead>
               <tbody>
-                {sortedRows?.map((row, rowIndex) => (
-                  <tr key={rowIndex} className="hover:bg-gray-200 dark:hover:bg-gray-600">
-                    <td className="border p-2 text-gray-800 dark:text-gray-300">{row.no}</td>
-                    <td className="border p-2 text-gray-800 dark:text-gray-300">{row.Mutation}</td>
-                    <td className="border p-2 text-gray-800 dark:text-gray-300">{row.RNApdist}</td>
-                    <td className="border p-2 text-gray-800 dark:text-gray-300">{row["RNAdistance(f)"]}</td>
-                    <td className="border p-2 text-gray-800 dark:text-gray-300">{row["Z-score"]}</td>
-                  </tr>
-                ))}
+              {sortedRows?.map((row, rowIndex) => (
+                <tr
+                  key={rowIndex}
+                  className="hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
+                  onClick={() => handleRowClick(row)}
+                >
+                  <td className="border p-2 text-gray-800 dark:text-gray-300">{row.no}</td>
+                  <td className="border p-2 text-gray-800 dark:text-gray-300">{row.Mutation}</td>
+                  <td className="border p-2 text-gray-800 dark:text-gray-300">{row.RNApdist}</td>
+                  <td className="border p-2 text-gray-800 dark:text-gray-300">{row["RNAdistance(f)"]}</td>
+                  <td className="border p-2 text-gray-800 dark:text-gray-300">{row["Z-score"]}</td>
+                </tr>
+              ))}
               </tbody>
             </table>
           </div>

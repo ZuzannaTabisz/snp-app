@@ -2,12 +2,18 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import io from "socket.io-client";
+
 import { useTheme } from "next-themes";
+import { useSearchParams } from 'next/navigation';
+
 
 const AnalysisPage = () => {
+  //parameters from router
+  const searchParams = useSearchParams();
+  const mut_sequence = searchParams.get('mut_sequence');
+  const wt_sequence = searchParams.get('wt_sequence');
   const { analysisId } = useParams();
-  const [message, setMessage] = useState("");
+
   const [error, setError] = useState("");
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [svgUrlMut, setSvgUrlMut] = useState<string | null>(null);
@@ -19,29 +25,21 @@ const AnalysisPage = () => {
   const [wildSequence, setWildSequence] = useState<string | null>(null);
 
   const fetchResults = useCallback(async () => {
-    try {
-      const response = await fetch(`http://localhost:8080/api/results/pair/${analysisId}`);
-      if (!response.ok) throw new Error("Failed to fetch combined text");
-      const data = await response.json();
-      setCombinedText(data.content);
-      setMutantSequence(data.mut_sequence);
-      setWildSequence(data.wt_sequence);
-    } catch {
-      setError("Failed to fetch analysis results");
-    }
+    const response = await fetch(`http://localhost:8080/api/results/pair/${analysisId}`);
+    if (!response.ok) throw new Error("Failed to fetch combined text");
+    const data = await response.json();
+    setCombinedText(data.content);
+    setMutantSequence(data.mut_sequence);
+    setWildSequence(data.wt_sequence);
   }, [analysisId]);
-
+  
   const fetchDownloadUrl = useCallback(async () => {
-    try {
-      const response = await fetch(`http://localhost:8080/api/results/${analysisId}/zip-download`);
-      if (!response.ok) throw new Error("Failed to fetch ZIP download");
-      const blob = await response.blob();
-      setDownloadUrl(URL.createObjectURL(blob));
-    } catch {
-      setError("Failed to fetch ZIP download");
-    }
+    const response = await fetch(`http://localhost:8080/api/results/${analysisId}/zip-download`);
+    if (!response.ok) throw new Error("Failed to fetch ZIP download");
+    const blob = await response.blob();
+    setDownloadUrl(URL.createObjectURL(blob));
   }, [analysisId]);
-
+  
   const fetchSvgUrls = useCallback(async () => {
     const endpoints = {
       svgMut: `/pair/${analysisId}/rna-plot-mut`,
@@ -49,26 +47,32 @@ const AnalysisPage = () => {
       treeMut: `/pair/${analysisId}/hit-tree_mut`,
       treeWt: `/pair/${analysisId}/hit-tree_wt`,
     };
-
+  
     for (const [key, endpoint] of Object.entries(endpoints)) {
-      try {
-        const response = await fetch(`http://localhost:8080/api/results${endpoint}`);
-        if (!response.ok) throw new Error(`Failed to fetch ${key}`);
-        const url = response.url;
-        if (key === "svgMut") setSvgUrlMut(url);
-        if (key === "svgWt") setSvgUrlWt(url);
-        if (key === "treeMut") setTreeSvgUrlMut(url);
-        if (key === "treeWt") setTreeSvgUrlWt(url);
-      } catch {
-        setError(`Failed to fetch ${key}`);
-      }
+      const response = await fetch(`http://localhost:8080/api/results${endpoint}`);
+      if (!response.ok) throw new Error(`Failed to fetch ${key}`);
+      const url = response.url;
+      if (key === "svgMut") setSvgUrlMut(url);
+      if (key === "svgWt") setSvgUrlWt(url);
+      if (key === "treeMut") setTreeSvgUrlMut(url);
+      if (key === "treeWt") setTreeSvgUrlWt(url);
     }
   }, [analysisId]);
 
+
+ 
+
   useEffect(() => {
-    fetchResults();
-    fetchDownloadUrl();
-    fetchSvgUrls();
+      setMutantSequence(mut_sequence);
+      setWildSequence(wt_sequence);
+  }, [analysisId,mut_sequence,wt_sequence]);
+  
+  useEffect(() => {
+
+      fetchResults();
+      fetchDownloadUrl();
+      fetchSvgUrls();
+
   }, [analysisId, fetchResults, fetchDownloadUrl, fetchSvgUrls]);
 
   const highlightDifferences = (mutant, wildType) => {
@@ -86,8 +90,8 @@ const AnalysisPage = () => {
         highlightedMutant += mutantChar;
         highlightedWildType += wildChar;
       } else {
-        highlightedMutant += `<span style="color:rgb(243, 48, 80);">${mutantChar}</span>`;
-        highlightedWildType += `<span style="color: rgb(243, 48, 80);">${wildChar}</span>`;
+        highlightedMutant += `<span style="color:rgb(240, 55, 95);">${mutantChar}</span>`;
+        highlightedWildType += `<span style="color: rgb(240, 55, 95);">${wildChar}</span>`;
       }
     }
 
@@ -104,11 +108,7 @@ const AnalysisPage = () => {
         Analysis Results
       </h1>
 
-      {message && (
-        <p className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400">
-          Status: {message}
-        </p>
-      )}
+      
       {error && (
         <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400">
           {error}

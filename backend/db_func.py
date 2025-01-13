@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 def extract_mut_or_wt_tree_svg_from_database(analysis_id, filename):
     conn = connect_to_database()
     if conn is None:
-        return f"error while connecting to databse (table tree_result)\n"
+        return jsonify({f"error while connecting to databse (table tree_result)\n"}), 500
     result = ""
     cursor = conn.cursor()
     if filename == 'tree_mut.svg':
@@ -31,7 +31,7 @@ def extract_mut_or_wt_tree_svg_from_database(analysis_id, filename):
             tree_mut_url = result[0]
             return tree_mut_url
         else:
-            return "No tree_mut.svg found for the given analysis_id."
+            return jsonify("No tree_mut.svg found for the given analysis_id."),404
     elif filename == 'tree_wt.svg':
         cursor.execute("""
                 SELECT tree_wt_url 
@@ -46,13 +46,13 @@ def extract_mut_or_wt_tree_svg_from_database(analysis_id, filename):
             tree_wt_url = result[0]
             return tree_wt_url
         else:
-            return "No tree_wt.svg found for the given analysis_id."
-    else: return ""
+            return jsonify("No tree_wt.svg found for the given analysis_id."),404
+    else: return jsonify("No tree.svg found for the given analysis_id."), 404
 
 def extract_mut_or_wt_dotbracket_svg_from_database(analysis_id, filename):
     conn = connect_to_database()
     if conn is None:
-        return f"error while connecting to databse (table rna_plot_result)\n"
+        return jsonify({f"error while connecting to databse (table rna_plot_result)\n"}), 500
     result = ""
     cursor = conn.cursor()
     if filename == 'mut-dotbracket.svg':
@@ -69,7 +69,7 @@ def extract_mut_or_wt_dotbracket_svg_from_database(analysis_id, filename):
             mutant_url = result[0]
             return mutant_url
         else:
-            return "No mut-dotbracket.svg found for the given analysis_id."
+            return jsonify("No mut-dotbracket.svg found for the given analysis_id."), 404
     elif filename == 'wt-dotbracket.svg':
         cursor.execute("""
                 SELECT wild_type_url 
@@ -84,13 +84,35 @@ def extract_mut_or_wt_dotbracket_svg_from_database(analysis_id, filename):
             wild_type_url = result[0]
             return wild_type_url
         else:
-            return "No wt-dotbracket.svg found for the given analysis_id."
-    else: return ""
+            return jsonify("No wt-dotbracket.svg found for the given analysis_id."), 404
+    else: return jsonify("No dotbracket.svg found for the given analysis_id."), 404
+
+def read_from_table_rna_fold_result(analysis_id):
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({f"error while connecting to databse (files: mut-dotbarcket.txt wt_dotbracket.txt)\n"}), 500
+    try: 
+        cursor = conn.cursor()
+        cursor.execute("SELECT wild_type_energy, mutant_energy FROM rna_fold_result WHERE task_id = %s", (analysis_id,))
+        result = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        if result:
+            wild_type_energy, mutant_energy = result
+            return (f"\nmut_dotbracket.txt:\nMutant sequence energy: {mutant_energy}\n"
+                    f"\nwt_dotbracket.txt:\nWild-Type sequence energy: {wild_type_energy}"), 200
+        else:
+            return jsonify("files: mut-dotbarcket.txt wt_dotbracket.txt not found"), 404
+    
+    except Exception as e:
+        return jsonify({f"Error while fetching data: {e}"}), 500
 
 def read_from_table_rna_pdist_result(analysis_id):
     conn = connect_to_database()
     if conn is None:
-        return f"error while connecting to databse (file RNApdist_result.txt)\n"
+        return jsonify({f"error while connecting to databse (file RNApdist_result.txt)\n"}), 500
     cursor = conn.cursor()
     cursor.execute("SELECT distance FROM rna_pdist_result WHERE task_id = %s", (analysis_id,))
     result = cursor.fetchone()
@@ -100,14 +122,14 @@ def read_from_table_rna_pdist_result(analysis_id):
 
     if result:
         distance = result[0]
-        return f"RNApdist_result.txt:\n{distance}\n"
+        return (f"RNApdist_result.txt:\n{distance}\n"), 201
     else:
-        return f"file RNApdist_result.txt not found\n"
+        return jsonify("file RNApdist_result.txt not found\n"), 404
 
 def read_from_table_rna_distance_result(analysis_id):
     conn = connect_to_database()
     if conn is None:
-        return f"error while connecting to databse (file RNAdistance-result.txt and RNAdistance-backtrack.txt )\n"
+        return jsonify({f"error while connecting to databse (file RNAdistance-result.txt and RNAdistance-backtrack.txt )\n"}), 500
     cursor = conn.cursor()
     cursor.execute("""
         SELECT 
@@ -125,14 +147,16 @@ def read_from_table_rna_distance_result(analysis_id):
         distance_big_f, distance_big_h, distance_big_w,
         distance_big_c, distance_big_p, backtrack_data) = result
 
+
         formatted_result = (
-        f"\n\nRNAdistance_result.txt:\n {distance_f}  h: {distance_h}  w: {distance_w}  c: {distance_c}\n"
+        f"\n\nRNAdistance_result.txt:\nf: {distance_f}  h: {distance_h}  w: {distance_w}  c: {distance_c}\n"
         f"F: {distance_big_f}  H: {distance_big_h}  W: {distance_big_w}  C: {distance_big_c}  P: {distance_big_p}\n"
-        f"\n\nRNAdistance_backtrack:{backtrack_data}")
+        f"\n\nRNAdistance_backtrack.txt:{backtrack_data}")
+
 
         return formatted_result
     else:
-        return f"file RNAdistance-result.txt and RNAdistance-backtrack.txt not found\n"
+        return ({f"file RNAdistance-result.txt and RNAdistance-backtrack.txt not found\n"}),404
 
 def save_to_table_tree_result(analysis_id, file_path, scenerio):
     id = str(uuid.uuid4())
@@ -479,10 +503,10 @@ def read_sequences_from_database_pair(analysis_id):
     
     if result:
         wild_type_sequence, mutant_sequence = result
-        return {
+        return ({
             "wild_type_sequence": wild_type_sequence,
             "mutant_sequence": mutant_sequence
-        }
+        }), 201
     else:
         return jsonify({"error": "No sequences found for the given analysis_id"}), 404
 
@@ -570,8 +594,36 @@ def read_sequence_from_database_single(analysis_id):
     
     if result:
         wild_type_sequence = result[0]
-        return {
+        return ({
             "wild_type_sequence": wild_type_sequence
-        }
+        }),201
     else:
         return jsonify({"error": "No wild type sequence found for the given analysis ID"}), 404
+
+def read_sequences_from_database_top_10(analysis_id):
+    conn = connect_to_database()
+    if conn is None:
+        return jsonify({"error": "Failed to connect to the database"}), 500
+    
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT s.wild_type_sequence, t.rank_snp, t.mutant_sequence 
+        FROM top_10 t
+        JOIN single s ON t.wild_type_seq_id = s.id
+        WHERE t.wild_type_seq_id = %s
+    """, (analysis_id,))
+    
+    results = cursor.fetchall()
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    if results:
+        wild_type_sequence = results[0][0]
+        mutant_sequences = {result[1]: result[2] for result in results}
+        return ({
+            "wild_type_sequence": wild_type_sequence,
+            "mutant_sequences": mutant_sequences
+        }), 201
+    else:
+        return jsonify({"error": "No sequences found for the given analysis ID"}), 404

@@ -1,19 +1,68 @@
 "use client"; //rendering on the client's side - must have for hooks like useState
-import React, { useState } from "react";
+import React, { useEffect, useState} from "react";
 import { useRouter } from "next/navigation";
+import io from "socket.io-client";
 import { useTheme } from "next-themes";
-
+import { v4 as uuidv4 } from "uuid";
 
 const PairPage = () => {
+  const [analysisId] = useState(uuidv4());
   const [mutantSequence, setMutantSequence] = useState("");
   const [wildSequence, setWildSequence] = useState("");
   const [dbSnpId, setDbSnpId] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [fetchDbSnp, setFetchDbSnp] = useState(false);
+  //const [analysisId, setAnalysisId] = useState<string>("");  
   const router = useRouter();
+
+  //const mut_sequence = searchParams.get('mut_sequence');
+  //const wt_sequence = searchParams.get('wt_sequence');
 
   const MAX_SEQUENCE_LENGTH = 10000;
   const MIN_SEQUENCE_LENGTH = 10;
+
+
+  useEffect(() => {
+    const socket = io(`http://localhost:8080/${analysisId}`, {
+      transports: ["websocket"],
+      autoConnect: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("WebSocket connected");
+    });
+
+    socket.on("connect_error", (err: unknown) => {
+      console.error("WebSocket connection error:", err);
+    });
+
+    socket.on('task_status', (data: { analysis_id: string; status: string }) => {
+      console.log("WebSocket status update:", data);
+      //setAnalysisId(data.analysis_id);
+      
+      setMessage(data.status);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [message, analysisId]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const mut_sequence = searchParams.get('mut_sequence');
+    const wt_sequence = searchParams.get('wt_sequence');
+
+    if (mut_sequence) {
+      setMutantSequence(mut_sequence);
+    }
+    if (wt_sequence) {
+      setWildSequence(wt_sequence);
+    }
+  }, []);
+
+
 
   const handleExampleClick = (example: number) => {
     // ddx11-rs14330
@@ -151,6 +200,10 @@ const PairPage = () => {
     console.log("handleSubmit");
     e.preventDefault();
     setError("");
+    
+    //setAnalysisId(newAnalysisId);
+    console.log("Generated UUID:", analysisId);
+    
   
     if (!(mutantSequence || wildSequence || fetchDbSnp)) {
       setError("Please provide mutant and wild-type sequence.");
@@ -188,19 +241,25 @@ const PairPage = () => {
     }
   
     try {
-  
+      console.log("Generated UUID in try:", analysisId);
+      if (!analysisId) throw new Error("Failed to start analysis (id).");
       const response = await fetch("http://localhost:8080/api/analyze/pair", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ mutantSequence, wildSequence }),
+        body: JSON.stringify({ analysisId: analysisId, mutantSequence, wildSequence }),
       });
   
       if (!response.ok) throw new Error("Failed to start analysis");
   
       const responseData = await response.json();
-      router.push(`/pair/${responseData.analysis_id}`);
+      //setAnalysisId(responseData.analysis_id);
+      const query = new URLSearchParams({
+        mut_sequence: mutantSequence,
+        wt_sequence: wildSequence,
+      }).toString();
+      router.push(`/pair/${responseData.analysis_id}?${query}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
     }
@@ -217,11 +276,18 @@ const PairPage = () => {
       <p className="mb-11 border-b pb-11 text-base leading-relaxed border-gray-200 dark:border-gray-600">
         Please enter your RNA sequence for analysis.
       </p>
+
+      {message && (
+        <p className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400">
+          {message}
+        </p>
+      )}
       {error && (
         <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400">
           {error}
         </p>
       )}
+
       <div>
         <input
           type="text"

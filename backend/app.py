@@ -214,7 +214,7 @@ def save_from_file_to_database(analysis_id):
 def run_step(step_name, command, cwd, analysis_id):
     try:
         subprocess.run(command, cwd=cwd, check=True)
-        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': 'Analysis started', 'step': step_name}, namespace=f'/single')
+        
     except subprocess.CalledProcessError as e:
         logger.error(f"{step_name} failed: {e}")
         socketio.emit('task_status', {'analysis_id': analysis_id, 'status': 'failed', 'step': step_name, 'error': str(e)}, namespace=f'/single')
@@ -242,7 +242,7 @@ def run_pipeline(mutant_sequence, wild_sequence, analysis_id):
         mut_file.write(mutant_sequence + '\n')
 
 
-    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
+    
 
     steps = [
         ("01-RNApdist", ['bash', os.path.join(BASE_DIR, 'pipeline', '01-RNApdist')]),
@@ -261,7 +261,7 @@ def run_pipeline(mutant_sequence, wild_sequence, analysis_id):
     with app.app_context():
         db_func.update_table_pair(analysis_id, 'completed')
 
-    #socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
+    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
 
 
 #helper functions form dbSNP
@@ -404,37 +404,44 @@ def analyze_pair():
 
     mutant_sequence = data.get('mutantSequence')
     wild_sequence = data.get('wildSequence')
+    analysis_id = data.get('analysisId')
+    logger.debug("Analysis started with ID: {analysis_id}")
     logger.debug(f"Mutant sequence: {mutant_sequence}, Wild sequence: {wild_sequence}")
 
     if not wild_sequence or not mutant_sequence:
         return jsonify({'error': 'Invalid input data'}), 400
 
-    analysis_id = str(uuid.uuid4())
+    #analysis_id = str(uuid.uuid4())
     socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
 
     with app.app_context():
         db_func.save_to_table_pair(analysis_id, wild_sequence, mutant_sequence, 'pending')
 
-    try:
-        #probably to delete threading 
-        #thread = threading.Thread(target=run_pipeline, args=(mutant_sequence, wild_sequence, analysis_id))
-        #thread.start()
-        #thread.join()
-        run_pipeline(mutant_sequence, wild_sequence, analysis_id)
-    except Exception as e:
-        logger.error(f"Error starting thread: {str(e)}")
-        return jsonify({'error': 'Failed to start analysis thread'}), 500
+    
+    #probably to delete threading 
+    #thread = threading.Thread(target=run_pipeline, args=(mutant_sequence, wild_sequence, analysis_id))
+    #thread.start()
+    #thread.join()
+    run_pipeline(mutant_sequence, wild_sequence, analysis_id)
 
+    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
+    
+    logger.debug(f"Analysis started with ID: {analysis_id}")
     return jsonify({"analysis_id": analysis_id}), 200
 
 
 @app.route('/api/results/pair/<analysis_id>', methods=['GET'])
 def read_from_databse(analysis_id):
     combined_content = ""
-    combined_content += db_func.read_from_table_rna_pdist_result(analysis_id)
-    combined_content += db_func.read_from_table_rna_distance_result(analysis_id)
+    pdist_result, _ = db_func.read_from_table_rna_pdist_result(analysis_id)
+    fold_result, _ = db_func.read_from_table_rna_fold_result(analysis_id)
+    distance_result, _ = db_func.read_from_table_rna_distance_result(analysis_id)
 
-    sequences = db_func.read_sequences_from_database_pair(analysis_id)
+    combined_content += pdist_result
+    combined_content += fold_result
+    combined_content += distance_result
+
+    sequences, _ = db_func.read_sequences_from_database_pair(analysis_id)
     if isinstance(sequences, tuple):
         return sequences  
 
@@ -474,46 +481,7 @@ def get_svg_from_database(analysis_id, filename):
     return send_file(svg_path, mimetype='image/svg+xml')
 
 
-
-@app.route('/api/analyze/single', methods=['POST'])
-def analyze_single():
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
-
-    wild_sequence = data.get('wildSequence')
-    logger.debug(f"Wild sequence: {wild_sequence}")
-
-    if not wild_sequence:
-        return jsonify({'error': 'Invalid input data'}), 400
-
-    analysis_id = str(uuid.uuid4())
-    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
-    
-
-    # saving wt sequence and analysys id to db
-    with app.app_context():
-        db_func.save_to_table_single(analysis_id, wild_sequence, 'pending')
-        for rank in range(1, 11):
-            id = str(uuid.uuid4())   
-            db_func.save_to_table_top_10(id, analysis_id, 'empty', rank, 'pending')
-
-
-    
-    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
-    os.makedirs(analysis_dir, exist_ok=True)
-
-
-
-    wt_file_path = os.path.join(analysis_dir, 'wt.txt')
-    with open(wt_file_path, 'w') as wt_file:
-        wt_file.write(wild_sequence + '\n')
-
-    script_directory = os.path.join(BASE_DIR, 'pipeline')
-
-    os.makedirs(analysis_dir, exist_ok=True)
-    os.chdir(analysis_dir)
-
+def run_single(wild_sequence, analysis_id, script_directory, analysis_dir):
     results = []
     arr_pdist = []
     arr_distance = []
@@ -522,7 +490,7 @@ def analyze_single():
     logger.info(f"Total mutations: {total_mutations}")
     logger.info(f"Length: {len(wild_sequence)}")
     processed_mutations = 0
-    lock = threading.Lock()
+    #lock = threading.Lock()
 
     try:
 
@@ -539,10 +507,11 @@ def analyze_single():
 
             for future in as_completed(futures):
                 result = future.result()
-                with lock:
-                    processed_mutations += 1
-                    progress = (processed_mutations / total_mutations) * 100
-                    logger.info(f"Progress: {progress:.2f}%")
+                #with lock:
+                processed_mutations += 1
+                progress = (processed_mutations / total_mutations) * 100
+                socketio.emit('progress_update', { 'progress': f"{progress:.2f}"}, broadcast=True, namespace=f'/{analysis_id}')
+                logger.info(f"Progress: {progress:.2f}%")
 
                 if result:
                     results.append(result)
@@ -595,7 +564,50 @@ def analyze_single():
             db_func.update_table_single(analysis_id, 'error')
             for rank in range(1, 11):   
                 db_func.update_table_top_10(analysis_id, 'empty', str(rank), 'error')
-        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis failed"}, broadcast=True, namespace=f'/{analysis_id}')   
+        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis failed"}, broadcast=True, namespace=f'/{analysis_id}')
+
+@app.route('/api/analyze/single', methods=['POST'])
+def analyze_single():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    wild_sequence = data.get('wildSequence')
+    analysis_id = data.get('analysisId')
+    logger.debug("Analysis started with ID: {analysis_id}")
+    logger.debug(f"Wild sequence: {wild_sequence}")
+
+    if not wild_sequence:
+        return jsonify({'error': 'Invalid input data'}), 400
+
+    #analysis_id = str(uuid.uuid4())
+    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
+    
+
+    # saving wt sequence and analysys id to db
+    with app.app_context():
+        db_func.save_to_table_single(analysis_id, wild_sequence, 'pending')
+        for rank in range(1, 11):
+            id = str(uuid.uuid4())   
+            db_func.save_to_table_top_10(id, analysis_id, 'empty', rank, 'pending')
+
+
+    
+    analysis_dir = os.path.join(BASE_DIR, 'pipeline', analysis_id)
+    os.makedirs(analysis_dir, exist_ok=True)
+
+
+
+    wt_file_path = os.path.join(analysis_dir, 'wt.txt')
+    with open(wt_file_path, 'w') as wt_file:
+        wt_file.write(wild_sequence + '\n')
+
+    script_directory = os.path.join(BASE_DIR, 'pipeline')
+
+    os.makedirs(analysis_dir, exist_ok=True)
+    os.chdir(analysis_dir)
+
+    run_single(wild_sequence, analysis_id, script_directory, analysis_dir)
 
     return jsonify({"analysis_id": analysis_id}), 200
 
@@ -618,17 +630,21 @@ def get_csv(analysis_id):
             "rows": df.head(10).to_dict(orient='records')
         }
 
-        wild_sequence_result = db_func.read_sequence_from_database_single(analysis_id)
+        wild_sequence_result, _ = db_func.read_sequences_from_database_top_10(analysis_id)
         if isinstance(wild_sequence_result, tuple):
             return wild_sequence_result 
     
         wild_sequence = wild_sequence_result.get("wild_type_sequence")
+        mutant_sequences = wild_sequence_result.get("mutant_sequences")
         logger.debug(f"Wild sequence: {wild_sequence}")
+        logger.debug(f"Mutant sequences: {mutant_sequences}")
 
         logger.debug(f"csv data: {csv_data}")
         return jsonify({
+            "analysis_id": analysis_id,
             "csv_data": csv_data,
-            "wt_sequence": wild_sequence
+            "wt_sequence": wild_sequence,
+            "mutant_sequences": mutant_sequences
         })
 
     except Exception as e:

@@ -1,19 +1,58 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-
+import io from "socket.io-client";
+import { v4 as uuidv4 } from "uuid";
 
 
 const SinglePage = () => {
+  const [analysisId] = useState(uuidv4());
   const [wildSequence, setWildSequence] = useState("");
   const [dbSnpId, setDbSnpId] = useState("");
   const [error, setError] = useState("");
   const [fetchDbSnp, setFetchDbSnp] = useState(false);
+  const [message, setMessage] = useState<string>("");
+  //const [analysisId, setAnalysisId] = useState<string>("");  
+  const [progress, setProgress] = useState<string | null>(null);
   const router = useRouter();
 
   const MAX_SEQUENCE_LENGTH = 100;
   const MIN_SEQUENCE_LENGTH = 1;
+
+  useEffect(() => {
+    const socket = io(`http://localhost:8080/${analysisId}`, {
+      transports: ["websocket"],
+      autoConnect: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("WebSocket connected");
+    });
+
+    socket.on('progress_update', (data) => {
+      console.log("WebSocket progress update:", data.progress);
+      setProgress(data.progress);
+    });
+
+    socket.on("connect_error", (err: unknown) => {
+      console.error("WebSocket connection error:", err);
+    });
+
+    socket.on('task_status', (data: { analysis_id: string; status: string }) => {
+      console.log("WebSocket status update:", data);
+      if (data.analysis_id === analysisId) {
+        setMessage(data.status);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [analysisId]);
+
+
+
 
   const handleExampleClick = (example: number) => {
     if (example === 1) {
@@ -131,6 +170,7 @@ const SinglePage = () => {
 
       const data = await response.json();
       setWildSequence(data.sequence);
+      
 
       setFetchDbSnp(true);
     } catch (err) {
@@ -141,7 +181,8 @@ const SinglePage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
+    //setAnalysisId(newAnalysisId);
+    console.log("Generated UUID:", analysisId);
     if (!wildSequence || fetchDbSnp) {
       setError("Please provide a wild-type sequence.");
       return;
@@ -160,19 +201,24 @@ const SinglePage = () => {
 
 
     try {
-
+      if (!analysisId) throw new Error("Failed to start analysis (id).");
       const response = await fetch("http://localhost:8080/api/analyze/single", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ wildSequence }),
+        body: JSON.stringify({ analysisId: analysisId, wildSequence }),
       });
 
       if (!response.ok) throw new Error("Failed to start analysis.");
 
       const responseData = await response.json();
-      router.push(`/single/${responseData.analysis_id}`);
+      //setAnalysisId(responseData.analysis_id);
+      const query = new URLSearchParams({
+        wt_sequence: wildSequence,
+        mutant_sequences: JSON.stringify(responseData.mutant_sequences),
+      }).toString();
+      router.push(`/single/${responseData.analysis_id}?${query}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
     }
@@ -188,11 +234,28 @@ const SinglePage = () => {
       <p className="mb-11 border-b pb-11 text-base leading-relaxed border-gray-200 dark:border-gray-600">
         Please enter your RNA sequence for analysis.
       </p>
-      {error && (
-        <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400">
-          {error}
+      {message && (
+          <p className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400">
+            {message}
+          </p>
+        )}
+        {error && (
+          <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400">
+            {error}
+          </p>
+        )}
+    
+        {/* Progress Bar */}
+        <div className="relative mb-6 h-4 rounded-full bg-gray-200 dark:bg-gray-700">
+          <div
+            className="absolute h-4 rounded-full transition-all duration-300 bg-green-400 dark:bg-green-500"
+            style={{ width: `${progress}%` }}
+          ></div>
+        </div>
+        <p className="text-sm text-center">
+          {progress}% Completed
         </p>
-      )}
+    
       
       <div>
         <input

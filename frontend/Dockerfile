@@ -10,6 +10,8 @@ RUN npm install
 
 RUN npm install socket.io-client@latest
 RUN npm install @types/socket.io-client
+RUN npm install uuid
+RUN npm install --save-dev @types/uuid
 #dodac to do package json
 
 
