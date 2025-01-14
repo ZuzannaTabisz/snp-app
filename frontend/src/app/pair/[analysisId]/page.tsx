@@ -90,8 +90,8 @@ const AnalysisPage = () => {
         highlightedMutant += mutantChar;
         highlightedWildType += wildChar;
       } else {
-        highlightedMutant += `<span style="color:rgb(240, 55, 95);">${mutantChar}</span>`;
-        highlightedWildType += `<span style="color: rgb(240, 55, 95);">${wildChar}</span>`;
+        highlightedMutant += `<span style="color:rgb(226, 19, 64);">${mutantChar}</span>`;
+        highlightedWildType += `<span style="color:rgb(226, 19, 64));">${wildChar}</span>`;
       }
     }
 
@@ -110,29 +110,42 @@ const AnalysisPage = () => {
 
       
       {error && (
-        <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400">
+        <p
+          className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words"
+        >
           {error}
         </p>
       )}
+
 
       <div className="mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
         <h3 className="text-xl font-semibold">Submitted Sequences:</h3>
         <div>
           <strong>Mutant Sequence:</strong>
-          <p className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white" dangerouslySetInnerHTML={{ __html: highlightedMutant || "N/A" }} />
+          <div className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto">
+            <p className="whitespace-nowrap" dangerouslySetInnerHTML={{ __html: highlightedMutant || "N/A" }} />
+          </div>
         </div>
         <div>
           <strong>Wild-Type Sequence:</strong>
-          <p className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white" dangerouslySetInnerHTML={{ __html: highlightedWildType || "N/A" }} />
+          <div className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto">
+            <p className="whitespace-nowrap" dangerouslySetInnerHTML={{ __html: highlightedWildType || "N/A" }} />
+          </div>
         </div>
       </div>
+
 
       {combinedText && (
         <div className="mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
           <h3 className="text-xl font-semibold">Analysis Results:</h3>
-          <pre className="mt-4">{combinedText}</pre>
+          <p
+            className="mt-4 whitespace-pre-wrap break-words"
+          >
+            {combinedText}
+          </p>
         </div>
       )}
+
 
       {downloadUrl && (
         <div className="text-center mt-6">

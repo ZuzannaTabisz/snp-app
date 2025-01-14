@@ -151,7 +151,7 @@ def read_from_table_rna_distance_result(analysis_id):
         formatted_result = (
         f"\n\nRNAdistance_result.txt:\nf: {distance_f}  h: {distance_h}  w: {distance_w}  c: {distance_c}\n"
         f"F: {distance_big_f}  H: {distance_big_h}  W: {distance_big_w}  C: {distance_big_c}  P: {distance_big_p}\n"
-        f"\n\nRNAdistance_backtrack.txt:{backtrack_data}")
+        f"\n\nRNAdistance_backtrack.txt:{backtrack_data}"),201
 
 
         return formatted_result

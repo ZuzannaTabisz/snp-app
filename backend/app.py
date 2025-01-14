@@ -261,7 +261,7 @@ def run_pipeline(mutant_sequence, wild_sequence, analysis_id):
     with app.app_context():
         db_func.update_table_pair(analysis_id, 'completed')
 
-    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
+    #socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
 
 
 #helper functions form dbSNP
@@ -424,7 +424,7 @@ def analyze_pair():
     #thread.join()
     run_pipeline(mutant_sequence, wild_sequence, analysis_id)
 
-    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
+    #socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
     
     logger.debug(f"Analysis started with ID: {analysis_id}")
     return jsonify({"analysis_id": analysis_id}), 200
@@ -556,7 +556,7 @@ def run_single(wild_sequence, analysis_id, script_directory, analysis_dir):
         with app.app_context():  
             db_func.update_table_single(analysis_id, 'completed') 
 
-        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
+        #socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
     
     except subprocess.CalledProcessError as e:
         logger.error(f"Error while running script: {e.stderr}")

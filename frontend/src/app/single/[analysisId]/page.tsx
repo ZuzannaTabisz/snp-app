@@ -130,17 +130,18 @@ const AnalysisResults = () => {
     
 
         {error && (
-          <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400">
-            {error}
-          </p>
-        )}
+        <p
+          className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words"
+        >
+          {error}
+        </p>
+      )}
     
         <div className="mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
           <h3 className="text-xl font-semibold dark:text-white">Submitted Sequence:</h3>
-    
-          <div>
-            <strong className="block text-sm mb-2 text-gray-600 dark:text-gray-300">Wild-Type Sequence:</strong>
-            <p className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-800 dark:text-white">
+          
+          <div className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-800 dark:text-white overflow-x-auto">
+            <p className="whitespace-nowrap">
               {wildSequence || "N/A"}
             </p>
           </div>
@@ -171,19 +172,19 @@ const AnalysisResults = () => {
                 </tr>
               </thead>
               <tbody>
-              {sortedRows?.map((row, rowIndex) => (
-                <tr
-                  key={rowIndex}
-                  className="hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
-                  onClick={() => handleRowClick(row)}
-                >
-                  <td className="border p-2 text-gray-800 dark:text-gray-300">{row.no}</td>
-                  <td className="border p-2 text-gray-800 dark:text-gray-300">{row.Mutation}</td>
-                  <td className="border p-2 text-gray-800 dark:text-gray-300">{row.RNApdist}</td>
-                  <td className="border p-2 text-gray-800 dark:text-gray-300">{row["RNAdistance(f)"]}</td>
-                  <td className="border p-2 text-gray-800 dark:text-gray-300">{row["Z-score"]}</td>
-                </tr>
-              ))}
+                {sortedRows?.map((row, rowIndex) => (
+                  <tr
+                    key={rowIndex}
+                    className="hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
+                    onClick={() => handleRowClick(row)}
+                  >
+                    <td className="border p-2 text-gray-800 dark:text-gray-300 whitespace-normal break-words">{row.no}</td>
+                    <td className="border p-2 text-gray-800 dark:text-gray-300 whitespace-normal break-words">{row.Mutation}</td>
+                    <td className="border p-2 text-gray-800 dark:text-gray-300 whitespace-normal break-words">{row.RNApdist}</td>
+                    <td className="border p-2 text-gray-800 dark:text-gray-300 whitespace-normal break-words">{row["RNAdistance(f)"]}</td>
+                    <td className="border p-2 text-gray-800 dark:text-gray-300 whitespace-normal break-words">{row["Z-score"]}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

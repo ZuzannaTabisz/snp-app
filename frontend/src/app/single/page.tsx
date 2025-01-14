@@ -15,10 +15,12 @@ const SinglePage = () => {
   const [message, setMessage] = useState<string>("");
   //const [analysisId, setAnalysisId] = useState<string>("");  
   const [progress, setProgress] = useState<string | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const router = useRouter();
 
   const MAX_SEQUENCE_LENGTH = 100;
   const MIN_SEQUENCE_LENGTH = 1;
+  const MAX_DBSNP_ID_LENGTH = 40;
 
   useEffect(() => {
     const socket = io(`http://localhost:8080/${analysisId}`, {
@@ -158,9 +160,33 @@ const SinglePage = () => {
     }
   };
 
+  const isValidDbSnpId = (input: string, setError: (error: string) => void): boolean => {
+    if (input.length > MAX_DBSNP_ID_LENGTH) {
+      console.log("dbSNP ID cannot exceed 40 characters.");
+      setError(`dbSNP ID cannot exceed ${MAX_DBSNP_ID_LENGTH} characters.`);
+      return false;
+    }
+    setError("");
+    return true;
+  };
+  
+  const handleDbSnpIdChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setDbSnpId: (value: string) => void
+  ) => {
+    const input = e.target.value.trim();
+    if (input === "" || isValidDbSnpId(input, setError)) {
+      setDbSnpId(input);
+    }
+  };
+
   const handleDbSnpSearch = async () => {
     if (!dbSnpId) {
       setError("Please provide a valid dbSNP ID.");
+      return;
+    }
+    if (dbSnpId.length > 40) {
+      setError("dbSNP ID cannot exceed 40 characters.");
       return;
     }
 
@@ -181,20 +207,24 @@ const SinglePage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsSubmitted(true);
     //setAnalysisId(newAnalysisId);
     console.log("Generated UUID:", analysisId);
     if (!wildSequence || fetchDbSnp) {
       setError("Please provide a wild-type sequence.");
+      setIsSubmitted(false);
       return;
     }
     
     if (wildSequence.length > MAX_SEQUENCE_LENGTH) {
       setError(`Sequence length exceeds the maximum allowed length of ${MAX_SEQUENCE_LENGTH}.`);
+      setIsSubmitted(false);
       return;
     }
 
     if (wildSequence.length < MIN_SEQUENCE_LENGTH) {
       setError(`Sequence length is below the minimum allowed length of ${MIN_SEQUENCE_LENGTH}.`);
+      setIsSubmitted(false);
       return;
     }
 
@@ -221,6 +251,7 @@ const SinglePage = () => {
       router.push(`/single/${responseData.analysis_id}?${query}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
+      setIsSubmitted(false);
     }
   };
 
@@ -231,104 +262,112 @@ const SinglePage = () => {
       <h3 className="mb-4 text-2xl font-bold leading-tight mt-24">
         RNA Sequence Analysis
       </h3>
-      <p className="mb-11 border-b pb-11 text-base leading-relaxed border-gray-200 dark:border-gray-600">
-        Please enter your RNA sequence for analysis.
-      </p>
       {message && (
-          <p className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400">
-            {message}
-          </p>
-        )}
-        {error && (
-          <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400">
-            {error}
-          </p>
-        )}
-    
-        {/* Progress Bar */}
-        <div className="relative mb-6 h-4 rounded-full bg-gray-200 dark:bg-gray-700">
-          <div
-            className="absolute h-4 rounded-full transition-all duration-300 bg-green-400 dark:bg-green-500"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-        <p className="text-sm text-center">
-          {progress}% Completed
+        <p className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400 whitespace-pre-wrap break-words">
+          {message}
         </p>
-    
+      )}
+      {error && (
+        <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
+          {error}
+        </p>
+      )}
+  
+      {!isSubmitted ? (
+        <>
+          <p className="mb-11 border-b pb-11 text-base leading-relaxed border-gray-200 dark:border-gray-600">
+            Please enter your RNA sequence for analysis.
+          </p>
+          <div style={{ overflow: "auto"}}>
+            <input
+              type="text"
+              name="wildSequence"
+              placeholder="Enter Wild-type RNA Sequence"
+              aria-label="Wild-type RNA Sequence"
+              className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+              value={wildSequence}
+              onChange={(e) => handleInputChange(e, setWildSequence)}
+            />
+          </div>
+          <input
+            type="file"
+            accept=".fasta,.txt"
+            aria-label="Upload RNA Sequence File"
+            className="mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+            onChange={(e) => handleFileUpload(e, setWildSequence)}
+          />
+          <div className="flex space-x-4">
+            <button
+              type="button"
+              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-orange-500 hover:bg-orange-600 dark:bg-orange-700 dark:shadow-submit-dark"
+              onClick={() => handleExampleClick(1)}
+            >
+              Example: rs12345
+            </button>
+            <button
+              type="button"
+              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-pink-500 hover:bg-pink-600 dark:bg-pink-700 dark:shadow-submit-dark"
+              onClick={() => handleExampleClick(2)}
+            >
+              Example: rs67890
+            </button>
+            <button
+              type="button"
+              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-purple-500 hover:bg-purple-600 dark:bg-purple-700 dark:shadow-submit-dark"
+              onClick={() => handleExampleClick(3)}
+            >
+              Example: rs98765
+            </button>
+          </div>
+          <input
+            type="text"
+            name="dbSnpId"
+            placeholder="Enter dbSNP ID"
+            aria-label="dbSNP ID"
+            className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+            value={dbSnpId}
+            onChange={(e) => handleDbSnpIdChange(e, setDbSnpId)}
+            maxLength={41}
+          />
+          <div className="flex flex-col space-y-4">
+            <button
+              type="button"
+              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-green-500 hover:bg-green-600 dark:bg-green-700 dark:shadow-submit-dark"
+              onClick={handleDbSnpSearch}
+            >
+              Search dbSNP
+            </button>
+          </div>
+          <button
+            type="submit"
+            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:shadow-submit-dark"
+            onClick={handleSubmit}
+          >
+            Submit
+          </button>
+        </>
+      ) : (
+
+        <>
+          <div className="relative mb-6 h-4 rounded-full bg-gray-200 dark:bg-gray-700">
+            <div
+              className="absolute h-4 rounded-full transition-all duration-300 bg-green-400 dark:bg-green-500"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          <p className="text-sm text-center">
+            {progress}% Completed
+          </p>
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="loader mb-4"></div>
+            <p className="text-lg font-medium text-center">
+              Your request is being processed. Please wait.
+            </p>
+          </div>
+        </>
+      )}
+  
       
-      <div>
-        <input
-          type="text"
-          name="wildSequence"
-          placeholder="Enter Wild-type RNA Sequence"
-          aria-label="Wild-type RNA Sequence"
-          className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-          value={wildSequence}
-          onChange={(e) => handleInputChange(e, setWildSequence)}
-        />
-        <input
-          type="file"
-          accept=".fasta,.txt"
-          aria-label="Upload RNA Sequence File"
-          className="mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-          onChange={(e) => handleFileUpload(e, setWildSequence)}
-        />
-  
-        <div className="flex space-x-4">
-          <button
-            type="button"
-            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-orange-500 hover:bg-orange-600 dark:bg-orange-700 dark:shadow-submit-dark"
-            onClick={() => handleExampleClick(1)}
-          >
-            Example: rs12345
-          </button>
-  
-          <button
-            type="button"
-            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-pink-500 hover:bg-pink-600 dark:bg-pink-700 dark:shadow-submit-dark"
-            onClick={() => handleExampleClick(2)}
-          >
-            Example: rs67890
-          </button>
-  
-          <button
-            type="button"
-            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-purple-500 hover:bg-purple-600 dark:bg-purple-700 dark:shadow-submit-dark"
-            onClick={() => handleExampleClick(3)}
-          >
-            Example: rs98765
-          </button>
-        </div>
-  
-        <input
-          type="text"
-          name="dbSnpId"
-          placeholder="Enter dbSNP ID"
-          aria-label="dbSNP ID"
-          className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-          value={dbSnpId}
-          onChange={(e) => setDbSnpId(e.target.value)}
-        />
-        
-        <div className="flex flex-col space-y-4">
-          <button
-            type="button"
-            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-green-500 hover:bg-green-600 dark:bg-green-700 dark:shadow-submit-dark"
-            onClick={handleDbSnpSearch}
-          >
-            Search dbSNP
-          </button>
-        </div>
-  
-        <button
-          type="submit"
-          className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:shadow-submit-dark"
-          onClick={handleSubmit}
-        >
-          Submit
-        </button>
-      </div>
     </div>
   );
 };
