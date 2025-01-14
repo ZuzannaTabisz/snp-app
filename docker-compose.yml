@@ -39,6 +39,8 @@ services:
       - MYSQL_DATABASE=SNPsniper_database
       - MYSQL_USER=root
       - MYSQL_PASSWORD=qwas
+      - http_proxy=http://proxy.prv.put.poznan.pl:8080
+      - https_proxy=http://proxy.prv.put.poznan.pl:8080
     networks:
       - backend
     extra_hosts:
