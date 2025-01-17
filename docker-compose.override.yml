@@ -6,3 +6,6 @@ services:
     environment:
       - PMA_HOST=db
       - PMA_PORT=3306
+      - PMA_ABSOLUTE_URI=http://localhost/pma/
+    depends_on:
+      - db
