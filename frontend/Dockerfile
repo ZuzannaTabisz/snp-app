@@ -1,29 +1,22 @@
-FROM node:21.6.1
+FROM node:21.6.1-alpine
+
 WORKDIR /usr/src/app
 
-#copying package.json files
+# Copy package files
 COPY package*.json ./
 
+# Install dependencies
+RUN npm ci
 
-RUN npm install
-
-
-RUN npm install socket.io-client@latest
-RUN npm install @types/socket.io-client
-RUN npm install uuid
-RUN npm install --save-dev @types/uuid
-#dodac to do package json
-
-
-
-
+# Copy source code
 COPY . .
 
-
+# Build application
 RUN npm run build
-
 
 EXPOSE 3000
 
+# Use production mode
+ENV NODE_ENV=production
 
-CMD ["npm", "run", "start"]
+CMD ["npm", "start"]
