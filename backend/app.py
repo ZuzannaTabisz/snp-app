@@ -635,7 +635,7 @@ def analyze_single():
         "task_status",
         {"analysis_id": analysis_id, "status": "Analysis started"},
         broadcast=True,
-        namespace=f"/{analysis_id}",
+        namespace=f"/single",
     )
 
     # saving wt sequence and analysys id to db
