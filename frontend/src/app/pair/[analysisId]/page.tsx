@@ -25,7 +25,7 @@ const AnalysisPage = () => {
   const [wildSequence, setWildSequence] = useState<string | null>(null);
 
   const fetchResults = useCallback(async () => {
-    const response = await fetch(`http://localhost:8080/api/results/pair/${analysisId}`);
+    const response = await fetch(`/api/results/pair/${analysisId}`);
     if (!response.ok) throw new Error("Failed to fetch combined text");
     const data = await response.json();
     setCombinedText(data.content);
@@ -34,7 +34,7 @@ const AnalysisPage = () => {
   }, [analysisId]);
   
   const fetchDownloadUrl = useCallback(async () => {
-    const response = await fetch(`http://localhost:8080/api/results/${analysisId}/zip-download`);
+    const response = await fetch(`/api/results/${analysisId}/zip-download`);
     if (!response.ok) throw new Error("Failed to fetch ZIP download");
     const blob = await response.blob();
     setDownloadUrl(URL.createObjectURL(blob));
@@ -49,7 +49,7 @@ const AnalysisPage = () => {
     };
   
     for (const [key, endpoint] of Object.entries(endpoints)) {
-      const response = await fetch(`http://localhost:8080/api/results${endpoint}`);
+      const response = await fetch(`/api/results${endpoint}`);
       if (!response.ok) throw new Error(`Failed to fetch ${key}`);
       const url = response.url;
       if (key === "svgMut") setSvgUrlMut(url);

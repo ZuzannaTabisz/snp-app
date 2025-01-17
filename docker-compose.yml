@@ -1,76 +1,53 @@
-
 services:
-  phpmyadmin:
-    container_name: phpmyadmin
-    image: phpmyadmin/phpmyadmin:latest
-    restart: always
-    ports:
-      - 8081:80
-    networks:
-      - backend
-
   db:
-    container_name: mysql
     image: mysql:8.0
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: qwas
-    ports:
-      - "3306:3306"
-    networks:
-      - backend
     volumes:
       - db-vol:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
   backend:
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-    container_name: backend
     restart: always
     build:
       context: ./backend
       dockerfile: Dockerfile
-      args: 
+      args:
         - http_proxy=http://proxy.prv.put.poznan.pl:8080
         - https_proxy=http://proxy.prv.put.poznan.pl:8080
-    ports:
-      - "8080:8080"
     environment:
-      - MYSQL_HOST=mysql
+      - MYSQL_HOST=db
       - MYSQL_DATABASE=SNPsniper_database
       - MYSQL_USER=root
       - MYSQL_PASSWORD=qwas
       - http_proxy=http://proxy.prv.put.poznan.pl:8080
       - https_proxy=http://proxy.prv.put.poznan.pl:8080
-    networks:
-      - backend
-    extra_hosts:
-      - "clinicaltables.nlm.nih.gov:130.14.65.58"  # IPv4 address
-      - "lforms-service-wip.lhcaws.nlm.nih.gov:130.14.65.58"  # Same address for alias
     depends_on:
       - db
 
   frontend:
-    container_name: frontend
     restart: unless-stopped
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args: 
+      args:
         - http_proxy=http://proxy.prv.put.poznan.pl:8080
         - https_proxy=http://proxy.prv.put.poznan.pl:8080
-    networks:
-      - backend
-    ports:
-      - "3000:3000"
     depends_on:
       - backend
 
-networks:
-  backend:
-    driver: bridge
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+
 
 volumes:
   db-vol:

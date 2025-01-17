@@ -23,7 +23,7 @@ const SinglePage = () => {
   const MAX_DBSNP_ID_LENGTH = 40;
 
   useEffect(() => {
-    const socket = io(`http://localhost:8080/${analysisId}`, {
+    const socket = io(`/${analysisId}`, {
       transports: ["websocket"],
       autoConnect: true,
     });
@@ -191,7 +191,7 @@ const SinglePage = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/dbsnp/${dbSnpId}`);
+      const response = await fetch(`/api/dbsnp/${dbSnpId}`);
       if (!response.ok) throw new Error("Failed to fetch sequence for dbSNP ID.");
 
       const data = await response.json();
@@ -232,7 +232,7 @@ const SinglePage = () => {
 
     try {
       if (!analysisId) throw new Error("Failed to start analysis (id).");
-      const response = await fetch("http://localhost:8080/api/analyze/single", {
+      const response = await fetch("/api/analyze/single", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
