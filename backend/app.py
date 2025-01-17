@@ -309,11 +309,28 @@ def get_sequence(chromosome, start_pos, end_pos):
 
 def check_internet_connection(url="http://www.google.com", verify=False):
     logger.debug(f"Checking internet connection to {url}")
+    
+    # Get proxy settings from environment variables
+    http_proxy = os.environ.get('http_proxy')
+    https_proxy = os.environ.get('https_proxy')
+    
+    proxies = {
+        'http': http_proxy,
+        'https': https_proxy
+    }
+    
+    logger.debug(f"Environment proxy settings: HTTP_PROXY={http_proxy}, HTTPS_PROXY={https_proxy}")
+    logger.debug(f"Using proxies: {proxies}")
 
     try:
         logger.debug(f"Sending GET request to {url} with SSL verification set to {verify}")
-        response = requests.get(url, timeout=5, verify=verify)
-
+        response = requests.get(
+            url, 
+            timeout=5, 
+            verify=verify,
+            proxies=proxies,
+            trust_env=True
+        )
 
         if response.status_code == 200:
             logger.debug(f"Connection successful. Status code: {response.status_code}")
@@ -340,6 +357,14 @@ def search_clinical_tables(snp_id):
     if not check_internet_connection():
         logger.error("No internet connection available.")
 
+    # Get proxy settings
+    http_proxy = os.environ.get('http_proxy')
+    https_proxy = os.environ.get('https_proxy')
+    
+    proxies = {
+        'http': http_proxy,
+        'https': https_proxy
+    }
 
     base_url = "https://clinicaltables.nlm.nih.gov/api/snps/v3/search"
     params = {
@@ -351,14 +376,14 @@ def search_clinical_tables(snp_id):
     logger.debug(f"Starting search for SNP ID: {snp_id}")
     logger.debug(f"Request URL: {base_url}")
     logger.debug(f"Request parameters: {params}")
+    logger.debug(f"Using proxies: {proxies}")
 
     try:
-
         session = requests.Session()
-
+        session.proxies = proxies  # Set proxies for the session
+        session.trust_env = True   # Trust environment variables
 
         logger.debug("Sending GET request to Clinical Tables API")
-
         response = session.get(base_url, params=params, timeout=10)
 
         logger.debug("Sending GET request to Clinical Tables API")
