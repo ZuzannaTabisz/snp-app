@@ -6,8 +6,6 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: qwas
-    ports:
-      - "3306:3306"
     networks:
       - backend
     volumes:
