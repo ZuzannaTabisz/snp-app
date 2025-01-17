@@ -27,9 +27,13 @@ const PairPage = () => {
 
 
   useEffect(() => {
-    const socket = io(`/${analysisId}`, {
+    const socket = io("/pair", {
+      path: "/socket.io",
       transports: ["websocket"],
       autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     socket.on("connect", () => {
