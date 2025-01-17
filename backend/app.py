@@ -366,60 +366,14 @@ def get_sequence(chromosome, start_pos, end_pos):
         return {"error": "Unexpected error"}
 
 
-def check_internet_connection(url="http://www.google.com", verify=False):
-    logger.debug(f"Checking internet connection to {url}")
-
-    # Get proxy settings from environment variables
-    http_proxy = os.environ.get("http_proxy")
-    https_proxy = os.environ.get("https_proxy")
-
-    proxies = {"http": http_proxy, "https": https_proxy}
-
-    logger.debug(
-        f"Environment proxy settings: HTTP_PROXY={http_proxy}, HTTPS_PROXY={https_proxy}"
-    )
-    logger.debug(f"Using proxies: {proxies}")
-
-    try:
-        logger.debug(
-            f"Sending GET request to {url} with SSL verification set to {verify}"
-        )
-        response = requests.get(
-            url, timeout=5, verify=verify, proxies=proxies, trust_env=True
-        )
-
-        if response.status_code == 200:
-            logger.debug(f"Connection successful. Status code: {response.status_code}")
-            return True
-        else:
-            logger.warning(f"Connection failed. Status code: {response.status_code}")
-            return False
-    except requests.ConnectionError as e:
-        logger.error(f"Connection error: {str(e)}")
-        return False
-    except requests.exceptions.Timeout as e:
-        logger.error(f"Timeout error: {str(e)}")
-        return False
-    except requests.exceptions.RequestException as e:
-        logger.error(f"General request exception: {str(e)}")
-        return False
-
-
-# https://stackoverflow.com/questions/23013220/max-retries-exceeded-with-url-in-requests
-
-
 def search_clinical_tables(snp_id):
-    logger.debug("Checking internet connection")
-
-    if not check_internet_connection():
-        logger.error("No internet connection available.")
-
-    # Get proxy settings
-    http_proxy = os.environ.get("http_proxy")
-    https_proxy = os.environ.get("https_proxy")
-
-    proxies = {"http": http_proxy, "https": https_proxy}
-
+    """
+    Search clinicaltables.nlm.nih.gov API for SNP information
+    Args:
+        snp_id (str): RS ID of the SNP (e.g., 'rs328')
+    Returns:
+        dict: Response from clinical tables API
+    """
     base_url = "https://clinicaltables.nlm.nih.gov/api/snps/v3/search"
     params = {
         "terms": snp_id,
@@ -427,51 +381,12 @@ def search_clinical_tables(snp_id):
         "df": "rsNum,38.alleles,38.chr,38.pos",
     }
 
-    logger.debug(f"Starting search for SNP ID: {snp_id}")
-    logger.debug(f"Request URL: {base_url}")
-    logger.debug(f"Request parameters: {params}")
-    logger.debug(f"Using proxies: {proxies}")
-
     try:
-        session = requests.Session()
-        session.proxies = proxies  # Set proxies for the session
-        session.trust_env = True  # Trust environment variables
-
-        logger.debug("Sending GET request to Clinical Tables API")
-        response = session.get(base_url, params=params, timeout=10)
-
-        logger.debug("Sending GET request to Clinical Tables API")
-        response = requests.get(base_url, params=params, timeout=10)
+        response = requests.get(base_url, params=params)
         response.raise_for_status()
-
-        logger.debug(f"Response Status Code: {response.status_code}")
-
-        response.raise_for_status()
-        logger.debug("Response received successfully, parsing JSON")
-
-        response_json = response.json()
-        logger.debug(f"Received JSON response: {response_json}")
-
-        if (
-            not response_json
-            or not isinstance(response_json, list)
-            or len(response_json) < 4
-        ):
-            logger.warning(f"Unexpected response structure: {response_json}")
-            return {"error": "Unexpected response structure"}
-
-        logger.debug(f"Successfully retrieved SNP data for {snp_id}.")
-        return response_json
-
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: {str(e)}")
-        return {"error": "Request failed"}
-    except ValueError as e:
-        logger.error(f"JSON decoding error: {str(e)}")
-        return {"error": "Invalid JSON response"}
+        return response.json()
     except Exception as e:
-        logger.error(f"Unexpected error occurred: {str(e)}")
-        return {"error": "Unexpected error"}
+        return {"error": str(e)}
 
 
 """API endpoints"""
