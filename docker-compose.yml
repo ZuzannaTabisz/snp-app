@@ -1,43 +1,41 @@
-
 services:
   db:
-    container_name: mysql
     image: mysql:8.0
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: qwas
-    networks:
-      - backend
     volumes:
       - db-vol:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
   backend:
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-    container_name: backend
     restart: always
     build:
       context: ./backend
       dockerfile: Dockerfile
-      args: 
+      args:
         - http_proxy=http://proxy.prv.put.poznan.pl:8080
         - https_proxy=http://proxy.prv.put.poznan.pl:8080
     environment:
-      - MYSQL_HOST=mysql
+      - MYSQL_HOST=db
       - MYSQL_DATABASE=SNPsniper_database
       - MYSQL_USER=root
       - MYSQL_PASSWORD=qwas
       - http_proxy=http://proxy.prv.put.poznan.pl:8080
       - https_proxy=http://proxy.prv.put.poznan.pl:8080
-    networks:
-      - backend
-    extra_hosts:
-      - "clinicaltables.nlm.nih.gov:130.14.65.58"  # IPv4 address
-      - "lforms-service-wip.lhcaws.nlm.nih.gov:130.14.65.58"  # Same address for alias
     depends_on:
       - db
+
+  frontend:
+    restart: unless-stopped
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - http_proxy=http://proxy.prv.put.poznan.pl:8080
+        - https_proxy=http://proxy.prv.put.poznan.pl:8080
+    depends_on:
+      - backend
 
   nginx:
     image: nginx:alpine
@@ -49,26 +47,7 @@ services:
     depends_on:
       - frontend
       - backend
-    networks:
-      - backend
 
-  frontend:
-    container_name: frontend
-    restart: unless-stopped
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args: 
-        - http_proxy=http://proxy.prv.put.poznan.pl:8080
-        - https_proxy=http://proxy.prv.put.poznan.pl:8080
-    networks:
-      - backend
-    depends_on:
-      - backend
-
-networks:
-  backend:
-    driver: bridge
 
 volumes:
   db-vol:
