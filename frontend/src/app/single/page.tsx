@@ -195,9 +195,7 @@ const SinglePage = () => {
       if (!response.ok) throw new Error("Failed to fetch sequence for dbSNP ID.");
 
       const data = await response.json();
-      setWildSequence(data.sequence);
-      
-
+      setWildSequence(data.wildType);
       setFetchDbSnp(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
