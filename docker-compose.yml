@@ -35,8 +35,6 @@ services:
       args: 
         - http_proxy=http://proxy.prv.put.poznan.pl:8080
         - https_proxy=http://proxy.prv.put.poznan.pl:8080
-    ports:
-      - "8080:8080"
     environment:
       - MYSQL_HOST=mysql
       - MYSQL_DATABASE=SNPsniper_database
@@ -52,6 +50,19 @@ services:
     depends_on:
       - db
 
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - backend
+
   frontend:
     container_name: frontend
     restart: unless-stopped
@@ -63,8 +74,6 @@ services:
         - https_proxy=http://proxy.prv.put.poznan.pl:8080
     networks:
       - backend
-    ports:
-      - "3000:3000"
     depends_on:
       - backend
 
