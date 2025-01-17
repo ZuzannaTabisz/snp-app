@@ -321,7 +321,7 @@ def run_pipeline(mutant_sequence, wild_sequence, analysis_id):
     with app.app_context():
         db_func.update_table_pair(analysis_id, "completed")
 
-    # socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
+    # socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace="/pair")
 
 
 # helper functions form dbSNP
@@ -412,7 +412,7 @@ def analyze_pair():
         "task_status",
         {"analysis_id": analysis_id, "status": "Analysis started"},
         broadcast=True,
-        namespace=f"/{analysis_id}",
+        namespace="/pair",
     )
 
     with app.app_context():
@@ -426,7 +426,7 @@ def analyze_pair():
     # thread.join()
     run_pipeline(mutant_sequence, wild_sequence, analysis_id)
 
-    # socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
+    # socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace="/single")
 
     logger.debug(f"Analysis started with ID: {analysis_id}")
     return jsonify({"analysis_id": analysis_id}), 200
@@ -537,7 +537,7 @@ def run_single(wild_sequence, analysis_id, script_directory, analysis_dir):
                     "progress_update",
                     {"progress": f"{progress:.2f}"},
                     broadcast=True,
-                    namespace=f"/{analysis_id}",
+                    namespace="/single",
                 )
                 logger.info(f"Progress: {progress:.2f}%")
 
