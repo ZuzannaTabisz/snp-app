@@ -6,7 +6,8 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci && \
+    npm install socket.io-client uuid @types/socket.io-client @types/uuid
 
 # Copy source code
 COPY . .
