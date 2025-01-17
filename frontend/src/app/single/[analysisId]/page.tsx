@@ -62,7 +62,7 @@ const AnalysisResults = () => {
   const fetchResults = useCallback(async () => {
     try {
       console.log("Fetching results");
-      const response = await fetch(`http://localhost:8080/api/results/single/${analysisId}`);
+      const response = await fetch(`/api/results/single/${analysisId}`);
       if (!response.ok) throw new Error("Failed to fetch combined text");
 
       const data: ApiResponse = await response.json();
@@ -77,7 +77,7 @@ const AnalysisResults = () => {
 
   const fetchResultsZIP = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:8080/api/results/${analysisId}/zip-download`);
+      const response = await fetch(`/api/results/${analysisId}/zip-download`);
       if (!response.ok) throw new Error("Failed to fetch results");
 
       const blob = await response.blob();
