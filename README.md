@@ -2,12 +2,21 @@
 
 ## Włączenie aplikacji
 
+Aplikację można uruchomić na dwa sposoby:
+
+### Podstawowa wersja (bez phpMyAdmin)
+
+```
+docker-compose -f docker-compose.yml up --build
+```
+
+### Pełna wersja (z phpMyAdmin pod ścieżką /pma)
+
 ```
 docker-compose up --build
-
 ```
 
-## Włączenie aplikacji z zapisywaiem logów
+## Włączenie aplikacji z zapisywaniem logów
 
 ```
 docker-compose up --build 2>&1 | tee build_log.txt
