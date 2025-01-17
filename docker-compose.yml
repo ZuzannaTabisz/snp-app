@@ -1,14 +1,5 @@
 
 services:
-  phpmyadmin:
-    container_name: phpmyadmin
-    image: phpmyadmin/phpmyadmin:latest
-    restart: always
-    ports:
-      - 8081:80
-    networks:
-      - backend
-
   db:
     container_name: mysql
     image: mysql:8.0
