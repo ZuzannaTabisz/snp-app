@@ -27,7 +27,7 @@ const PairPage = () => {
 
 
   useEffect(() => {
-    const socket = io({
+    const socket = io("/pair", {
       path: "/socket.io",
       transports: ["websocket"],
       autoConnect: true,

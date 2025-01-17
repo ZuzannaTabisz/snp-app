@@ -276,7 +276,7 @@ def run_step(step_name, command, cwd, analysis_id):
                 "step": step_name,
                 "error": str(e),
             },
-            namespace=f"/single",
+            namespace="/single",
         )
         with app.app_context():
             db_func.update_table_pair(analysis_id, "error")
@@ -612,7 +612,7 @@ def run_single(wild_sequence, analysis_id, script_directory, analysis_dir):
             "task_status",
             {"analysis_id": analysis_id, "status": "Analysis failed"},
             broadcast=True,
-            namespace=f"/{analysis_id}",
+            namespace="/pair",
         )
 
 

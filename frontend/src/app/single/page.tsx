@@ -23,7 +23,7 @@ const SinglePage = () => {
   const MAX_DBSNP_ID_LENGTH = 40;
 
   useEffect(() => {
-    const socket = io({
+    const socket = io("/single", {
       path: "/socket.io",
       transports: ["websocket"],
       autoConnect: true,
