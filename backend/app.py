@@ -207,7 +207,7 @@ def save_from_file_to_database(analysis_id):
         with app.app_context():
             db_func.save_to_table_tree_result(analysis_id, 'empty', 3) 
 
-"""Herlper functions for API"""
+"""Helper functions for API"""
 
 #helper functions for executing pipeline
 
@@ -418,7 +418,6 @@ def analyze_pair():
         db_func.save_to_table_pair(analysis_id, wild_sequence, mutant_sequence, 'pending')
 
     
-    #probably to delete threading 
     #thread = threading.Thread(target=run_pipeline, args=(mutant_sequence, wild_sequence, analysis_id))
     #thread.start()
     #thread.join()
@@ -432,21 +431,20 @@ def analyze_pair():
 
 @app.route('/api/results/pair/<analysis_id>', methods=['GET'])
 def read_from_databse(analysis_id):
-    combined_content = ""
     pdist_result, _ = db_func.read_from_table_rna_pdist_result(analysis_id)
     fold_result, _ = db_func.read_from_table_rna_fold_result(analysis_id)
     distance_result, _ = db_func.read_from_table_rna_distance_result(analysis_id)
 
-    combined_content += pdist_result
-    combined_content += fold_result
-    combined_content += distance_result
 
     sequences, _ = db_func.read_sequences_from_database_pair(analysis_id)
     if isinstance(sequences, tuple):
         return sequences  
 
+    logger.info("Before return")
     return jsonify({
-        "content": combined_content,
+        'RNApdist': pdist_result,
+        'RNAfold': fold_result,
+        'RNAdistance': distance_result,
         "wt_sequence": sequences.get("wild_type_sequence"),
         "mut_sequence": sequences.get("mutant_sequence")
     })
@@ -460,11 +458,11 @@ def get_svg_mut(analysis_id):
 def get_svg_wt(analysis_id):
     return get_svg_from_database(analysis_id, 'wt-dotbracket.svg')
 
-@app.route('/api/results/pair/<analysis_id>/hit-tree_wt', methods=['GET'])
+@app.route('/api/results/pair/<analysis_id>/hit-tree-wt', methods=['GET'])
 def get_svg_hit_tree_wt(analysis_id):
     return get_svg_from_database(analysis_id, 'tree_wt.svg')
 
-@app.route('/api/results/pair/<analysis_id>/hit-tree_mut', methods=['GET'])
+@app.route('/api/results/pair/<analysis_id>/hit-tree-mut', methods=['GET'])
 def get_svg_hit_tree_mut(analysis_id):
     return get_svg_from_database(analysis_id, 'tree_mut.svg')
 

@@ -6,7 +6,7 @@ import { useTheme } from "next-themes";
 
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from "next/navigation";
-
+import "../../../styles/index.css";
 
 interface TaskStatus {
   analysis_id: string;

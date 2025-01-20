@@ -2,10 +2,17 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-
 import { useTheme } from "next-themes";
 import { useSearchParams } from 'next/navigation';
+import { NWaligner } from "seqalign";
+import Image from 'next/image';
+import "../../../styles/index.css";
 
+interface ConversionResult {
+  mutations: string[];
+  wtSequence: string;
+  mutSequence: string;
+}
 
 const AnalysisPage = () => {
   //parameters from router
@@ -20,15 +27,26 @@ const AnalysisPage = () => {
   const [svgUrlWt, setSvgUrlWt] = useState<string | null>(null);
   const [svgTreeUrlMut, setTreeSvgUrlMut] = useState<string | null>(null);
   const [svgTreeUrlWt, setTreeSvgUrlWt] = useState<string | null>(null);
-  const [combinedText, setCombinedText] = useState<string | null>(null);
+  const [rnaPdist, setRNAPdist] = useState<any>(null);
+  const [rnaFold, setRNAFold] = useState<any>(null);
+  const [rnaDistance, setRNADistance] = useState<any>(null);
   const [mutantSequence, setMutantSequence] = useState<string | null>(null);
   const [wildSequence, setWildSequence] = useState<string | null>(null);
+  const [highlighted, setHighlighted] = useState<{ highlightedWild: JSX.Element[]; highlightedMutant: JSX.Element[] } | null>(null);
+  const [mutations, setMutations] = useState<string[]>([]);
 
   const fetchResults = useCallback(async () => {
+    console.log("In fetchResults");
     const response = await fetch(`http://localhost:8080/api/results/pair/${analysisId}`);
     if (!response.ok) throw new Error("Failed to fetch combined text");
     const data = await response.json();
-    setCombinedText(data.content);
+    setRNAPdist(data.RNApdist);
+    setRNAFold(data.RNAfold);
+    setRNADistance(data.RNAdistance);
+    console.log("RNAresults: ", data);
+    console.log("RNApdist: ", data.RNApdist);
+    console.log("RNAfold: ", data.RNAfold);
+    console.log("RNAdistance: ", data.RNAdistance);
     setMutantSequence(data.mut_sequence);
     setWildSequence(data.wt_sequence);
   }, [analysisId]);
@@ -44,8 +62,8 @@ const AnalysisPage = () => {
     const endpoints = {
       svgMut: `/pair/${analysisId}/rna-plot-mut`,
       svgWt: `/pair/${analysisId}/rna-plot-wt`,
-      treeMut: `/pair/${analysisId}/hit-tree_mut`,
-      treeWt: `/pair/${analysisId}/hit-tree_wt`,
+      treeMut: `/pair/${analysisId}/hit-tree-mut`,
+      treeWt: `/pair/${analysisId}/hit-tree-wt`,
     };
   
     for (const [key, endpoint] of Object.entries(endpoints)) {
@@ -59,46 +77,109 @@ const AnalysisPage = () => {
     }
   }, [analysisId]);
 
-
- 
-
   useEffect(() => {
-      setMutantSequence(mut_sequence);
-      setWildSequence(wt_sequence);
-  }, [analysisId,mut_sequence,wt_sequence]);
+    setMutantSequence(mut_sequence);
+    setWildSequence(wt_sequence);
+  }, [analysisId, mut_sequence, wt_sequence]);
   
   useEffect(() => {
-
-      fetchResults();
-      fetchDownloadUrl();
-      fetchSvgUrls();
-
+    fetchResults();
+    fetchDownloadUrl();
+    fetchSvgUrls();
   }, [analysisId, fetchResults, fetchDownloadUrl, fetchSvgUrls]);
-
-  const highlightDifferences = (mutant, wildType) => {
-    if (!mutant || !wildType) return { highlightedMutant: "", highlightedWildType: "" };
-
-    const maxLength = Math.max(mutant.length, wildType.length);
-    let highlightedMutant = '';
-    let highlightedWildType = '';
-
-    for (let i = 0; i < maxLength; i++) {
-      const mutantChar = mutant[i] || ''; 
-      const wildChar = wildType[i] || '';
-
-      if (mutantChar === wildChar) {
-        highlightedMutant += mutantChar;
-        highlightedWildType += wildChar;
-      } else {
-        highlightedMutant += `<span style="color:rgb(226, 19, 64);">${mutantChar}</span>`;
-        highlightedWildType += `<span style="color:rgb(226, 19, 64));">${wildChar}</span>`;
-      }
+  
+  useEffect(() => {
+    if (wildSequence && mutantSequence) {
+      const result = convertToAligned(wildSequence, mutantSequence);
+      const highlighted = highlightDifferences(result.wtSequence, result.mutSequence);
+      setHighlighted(highlighted);
+      setMutations(result.mutations);
     }
+  }, [wildSequence, mutantSequence]);
+  
 
-    return { highlightedMutant, highlightedWildType };
-  };
 
-  const { highlightedMutant, highlightedWildType } = highlightDifferences(mutantSequence, wildSequence);
+
+    const convertToAligned = (wildSeq: string, mutSeq: string): ConversionResult => {
+      try {
+        console.log("In align");
+    
+        const customAligner = NWaligner({
+          inDelScore: -3,
+          gapSymbol: '-', 
+          similarityScoreFunction: (char1: string, char2: string) => (char1 === char2 ? 1 : 0), // Punkty za dopasowania
+        });
+
+        const alignmentResult = customAligner.align(wildSeq, mutSeq);
+        console.log("alignmentreult: ", alignmentResult)
+        if (!alignmentResult || alignmentResult.alignedSequences.length !== 2) {
+          console.error("Alignment result is invalid.");
+          return {
+            mutations: [],
+            wtSequence: wildSeq,
+            mutSequence: mutSeq,
+          };
+        }
+    
+        const [alignedWild, alignedMut] = alignmentResult.alignedSequences;
+    
+        let xyzMutations: string[] = [];
+        let wildIndex = 0;
+    
+        for (let i = 0; i < alignedWild.length; i++) {
+          const wildNuc = alignedWild[i];
+          const mutNuc = alignedMut[i];
+    
+          if (wildNuc !== "-") {
+            wildIndex++;
+          }
+    
+          if (wildNuc !== mutNuc) {
+            xyzMutations.push(`${wildNuc}_${wildIndex}_${mutNuc}`);
+          }
+        }
+    
+        console.log("Mutations: ", xyzMutations);
+        return {
+          mutations: xyzMutations,
+          wtSequence: alignedWild.replace(/\s+/g, ''),
+          mutSequence: alignedMut.replace(/\s+/g, ''),
+        };
+      } catch (error) {
+        console.error("Error occurred during alignment:", error);
+
+        return {
+          mutations: [],
+          wtSequence: wildSeq,
+          mutSequence: mutSeq,
+        };
+      }
+    };
+  
+  const highlightDifferences = (mutant, wildType) => {
+    if (!mutant || !wildType) return { highlightedMutant: [], highlightedWild: [] };
+  
+    const maxLength = Math.max(mutant.length, wildType.length);
+    const highlightedMutant: JSX.Element[] = [];
+    const highlightedWild: JSX.Element[] = [];
+  
+    for (let i = 0; i < maxLength; i++) {
+        const mutantChar = mutant[i] || '-';
+        const wildChar = wildType[i] || '-';
+  
+        if (mutantChar === wildChar) {
+            highlightedMutant.push(<span key={`mutant-${i}`}>{mutantChar}</span>);
+            highlightedWild.push(<span key={`wild-${i}`}>{wildChar}</span>);
+        } else {
+            highlightedMutant.push(<span key={`mutant-${i}`} style={{ color: 'rgb(226, 19, 64)' }}>{mutantChar}</span>);
+            highlightedWild.push(<span key={`wild-${i}`} style={{ color: 'rgb(226, 19, 64)' }}>{wildChar}</span>);
+        }
+    }
+  
+    return { highlightedMutant, highlightedWild };
+};
+
+  
 
   const { theme } = useTheme();
 
@@ -108,43 +189,57 @@ const AnalysisPage = () => {
         Analysis Results
       </h1>
 
-      
       {error && (
-        <p
-          className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words"
-        >
+        <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
           {error}
         </p>
       )}
-
 
       <div className="mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
         <h3 className="text-xl font-semibold">Submitted Sequences:</h3>
         <div>
           <strong>Mutant Sequence:</strong>
-          <div className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto">
-            <p className="whitespace-nowrap" dangerouslySetInnerHTML={{ __html: highlightedMutant || "N/A" }} />
+          <div className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
+            <span className="font-mono">{highlighted ? highlighted.highlightedMutant : "N/A"}</span>
           </div>
         </div>
         <div>
           <strong>Wild-Type Sequence:</strong>
-          <div className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto">
-            <p className="whitespace-nowrap" dangerouslySetInnerHTML={{ __html: highlightedWildType || "N/A" }} />
+          <div className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
+            <span className="font-mono">{highlighted ? highlighted.highlightedWild : "N/A"}</span>
           </div>
         </div>
       </div>
 
+      {rnaPdist && rnaFold && rnaDistance && (
+      <div className="mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+        <h3 className="text-xl font-semibold">Analysis Results:</h3>
+        <p className="mt-4 whitespace-pre-wrap break-words">
+          <strong>Mutation:</strong> {mutations.length > 0 ? mutations.join(", ") : "N/A"}<br />
 
-      {combinedText && (
-        <div className="mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-          <h3 className="text-xl font-semibold">Analysis Results:</h3>
-          <p
-            className="mt-4 whitespace-pre-wrap break-words"
-          >
-            {combinedText}
-          </p>
-        </div>
-      )}
+          <strong>RNApdist:</strong><br />
+          <span className="font-mono">{rnaPdist.toFixed(2)}</span><br /><br />
+
+          <strong>RNAfold:</strong><br />
+          <span className="font-mono">
+            Mutant Energy: {rnaFold.mutant_energy} kcal/mol<br />
+            Wild Type Energy: {rnaFold.wild_type_energy} kcal/mol
+          </span><br /><br />
+
+          <strong>RNAdistance:</strong><br />
+          <span className="font-mono">
+            <strong>Backtrack:</strong><br />
+            {rnaDistance.RNAdistance_backtrack
+              .split("\n")
+              .filter(line => line.trim() !== "")
+              .slice(0, 4)
+              .join("\n")}<br /><br />
+            <strong>Results:</strong><br />
+            f: {rnaDistance.RNAdistance_result.f}, h: {rnaDistance.RNAdistance_result.h}
+          </span>
+        </p>
+      </div>
+)}
 
 
       {downloadUrl && (
@@ -164,7 +259,9 @@ const AnalysisPage = () => {
           {svgUrlMut && (
             <div className="mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
               <h3 className="text-xl font-semibold">MUT SVG:</h3>
-              <object data={svgUrlMut} type="image/svg+xml" width="100%" height="400" />
+              <a href={svgUrlMut} target="_blank" rel="noopener noreferrer">
+                <img src={svgUrlMut} alt="MUT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
+              </a>
             </div>
           )}
         </div>
@@ -172,7 +269,9 @@ const AnalysisPage = () => {
           {svgUrlWt && (
             <div className="mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
               <h3 className="text-xl font-semibold">WT SVG:</h3>
-              <object data={svgUrlWt} type="image/svg+xml" width="100%" height="400" />
+              <a href={svgUrlWt} target="_blank" rel="noopener noreferrer">
+                <img src={svgUrlWt} alt="WT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
+              </a>
             </div>
           )}
         </div>
@@ -183,7 +282,9 @@ const AnalysisPage = () => {
           {svgTreeUrlMut && (
             <div className="mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
               <h3 className="text-xl font-semibold">TREE MUT SVG:</h3>
-              <object data={svgTreeUrlMut} type="image/svg+xml" width="100%" height="400" />
+              <a href={svgTreeUrlMut} target="_blank" rel="noopener noreferrer">
+                <img src={svgTreeUrlMut} alt="TREE MUT SVG" style={{ maxWidth: '50%', height: '50%', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
+              </a>
             </div>
           )}
         </div>
@@ -191,7 +292,9 @@ const AnalysisPage = () => {
           {svgTreeUrlWt && (
             <div className="mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
               <h3 className="text-xl font-semibold">TREE WT SVG:</h3>
-              <object data={svgTreeUrlWt} type="image/svg+xml" width="100%" height="400" />
+              <a href={svgTreeUrlWt} target="_blank" rel="noopener noreferrer">
+                <img src={svgTreeUrlWt} alt="TREE WT SVG" style={{ maxWidth: '50%', height: '50%', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
+              </a>
             </div>
           )}
         </div>

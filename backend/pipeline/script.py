@@ -119,7 +119,7 @@ def process_mutation(key, mutation, script_directory, sequences_directory,wild_s
             except RuntimeError as e:
                 logger.error(f"Error during RNAfold: {e}")
 
-           
+            
             try:
                 command = f'bash {os.path.join(script_directory, "03-RNAdistance")}'
                 run_command(command, cwd=mutation_dir)

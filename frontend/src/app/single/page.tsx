@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import io from "socket.io-client";
 import { v4 as uuidv4 } from "uuid";
+import "../../styles/index.css";
 
 
 const SinglePage = () => {
