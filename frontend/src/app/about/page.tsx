@@ -30,7 +30,7 @@ const AboutPage = () => {
         {paragraphs.map((text, index) => (
           <p
             key={index}
-            className={`mb-4 transition-opacity duration-700 ease-in-out${
+            className={`mb-4 transition-opacity duration-700 ease-in-out ${
               index < visibleParagraphs ? "opacity-100" : "opacity-0"
             }`}
           >
