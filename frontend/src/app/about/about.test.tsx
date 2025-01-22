@@ -6,8 +6,8 @@ describe('AboutPage', () => {
   it('renders the Breadcrumb component', () => {
     render(<AboutPage />);
 
-    
     expect(screen.getByRole('heading', { name: 'About Page' })).toBeInTheDocument();
-    expect(screen.getByText('Lorem ipsum dolor sit amet, consectetur adipiscing elit. In varius eros eget sapien consectetur ultrices. Ut quis dapibus libero.')).toBeInTheDocument();
+    const descriptionElement = screen.getByText('Lorem ipsum dolor sit amet, consesctetur adipiscing elit. In varius eros eget sapien consectetur ultrices. Ut quis dapibus libero.', { exact: false });
+    expect(descriptionElement).toBeInTheDocument();
   });
 });

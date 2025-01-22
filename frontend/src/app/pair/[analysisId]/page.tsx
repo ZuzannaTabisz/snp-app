@@ -184,66 +184,69 @@ const AnalysisPage = () => {
   const { theme } = useTheme();
 
   return (
-    <div className="relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-800 dark:text-white sm:p-11 lg:p-8 xl:p-11">
-      <h1 className="mb-4 text-2xl font-bold leading-tight mt-24">
+    <div className="analysis-page relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-800 dark:text-white sm:p-11 lg:p-8 xl:p-11">
+      <h1 className="analysis-title mb-4 text-2xl font-bold leading-tight mt-24">
         Analysis Results
       </h1>
 
       {error && (
-        <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
+        <p className="analysis-error mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
           {error}
         </p>
       )}
 
-      <div className="mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+      <div className="submitted-sequences mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
         <h3 className="text-xl font-semibold">Submitted Sequences:</h3>
         <div>
           <strong>Mutant Sequence:</strong>
-          <div className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
+          <div className="sequence-box mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
             <span className="font-mono">{highlighted ? highlighted.highlightedMutant : "N/A"}</span>
           </div>
         </div>
         <div>
           <strong>Wild-Type Sequence:</strong>
-          <div className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
+          <div className="sequence-box mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
             <span className="font-mono">{highlighted ? highlighted.highlightedWild : "N/A"}</span>
           </div>
         </div>
       </div>
 
       {rnaPdist && rnaFold && rnaDistance && (
-      <div className="mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-        <h3 className="text-xl font-semibold">Analysis Results:</h3>
-        <p className="mt-4 whitespace-pre-wrap break-words">
-          <strong>Mutation:</strong> {mutations.length > 0 ? mutations.join(", ") : "N/A"}<br />
+        <div className="analysis-results mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+          <h3 className="text-xl font-semibold">Analysis Results:</h3>
+          <p className="mt-4 whitespace-pre-wrap break-words">
+            <strong>Mutation:</strong> {mutations.length > 0 ? mutations.join(", ") : "N/A"}<br />
 
-          <strong>RNApdist:</strong><br />
-          <span className="font-mono">{rnaPdist.toFixed(2)}</span><br /><br />
+            <strong>RNApdist:</strong><br />
+            <span className="font-mono">{rnaPdist.toFixed(2)}</span><br /><br />
 
-          <strong>RNAfold:</strong><br />
-          <span className="font-mono">
-            Mutant Energy: {rnaFold.mutant_energy} kcal/mol<br />
-            Wild Type Energy: {rnaFold.wild_type_energy} kcal/mol
-          </span><br /><br />
+            <strong>RNAfold:</strong><br />
+            <span className="font-mono">
+              Mutant Energy: {rnaFold.mutant_energy} kcal/mol<br />
+              Wild Type Energy: {rnaFold.wild_type_energy} kcal/mol
+            </span><br /><br />
 
-          <strong>RNAdistance:</strong><br />
-          <span className="font-mono">
-            <strong>Backtrack:</strong><br />
-            {rnaDistance.RNAdistance_backtrack
-              .split("\n")
-              .filter(line => line.trim() !== "")
-              .slice(0, 4)
-              .join("\n")}<br /><br />
-            <strong>Results:</strong><br />
-            f: {rnaDistance.RNAdistance_result.f}, h: {rnaDistance.RNAdistance_result.h}
-          </span>
-        </p>
-      </div>
-)}
-
+            <strong>RNAdistance:</strong><br />
+            <span className="font-mono">
+              <strong>Results:</strong><br />
+              f: {rnaDistance.RNAdistance_result.f}, h: {rnaDistance.RNAdistance_result.h}<br /><br />
+              <strong>Backtrack:</strong><br />
+              {rnaDistance.RNAdistance_backtrack
+                .split("\n")
+                .filter(line => line.trim() !== "")
+                .slice(0, 4)
+                .map((line, index) => (
+                  <div key={index} className="backtrack-box mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
+                    {line}
+                  </div>
+                ))}<br /><br />
+            </span>
+          </p>
+        </div>
+      )}
 
       {downloadUrl && (
-        <div className="text-center mt-6">
+        <div className="download-link text-center mt-6">
           <a
             href={downloadUrl}
             download={`${analysisId}.zip`}
@@ -254,10 +257,10 @@ const AnalysisPage = () => {
         </div>
       )}
 
-      <div className="flex justify-between mt-6">
-        <div className="w-1/2 text-center">
+      <div className="svg-container flex justify-between mt-6">
+        <div className="svg-box w-1/2 text-center">
           {svgUrlMut && (
-            <div className="mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
+            <div className="svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
               <h3 className="text-xl font-semibold">MUT SVG:</h3>
               <a href={svgUrlMut} target="_blank" rel="noopener noreferrer">
                 <img src={svgUrlMut} alt="MUT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
@@ -265,9 +268,9 @@ const AnalysisPage = () => {
             </div>
           )}
         </div>
-        <div className="w-1/2 text-center">
+        <div className="svg-box w-1/2 text-center">
           {svgUrlWt && (
-            <div className="mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
+            <div className="svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
               <h3 className="text-xl font-semibold">WT SVG:</h3>
               <a href={svgUrlWt} target="_blank" rel="noopener noreferrer">
                 <img src={svgUrlWt} alt="WT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
@@ -277,10 +280,10 @@ const AnalysisPage = () => {
         </div>
       </div>
 
-      <div className="flex justify-between mt-6">
-        <div className="w-1/2 text-center">
+      <div className="tree-svg-container flex justify-between mt-6">
+        <div className="tree-svg-box w-1/2 text-center">
           {svgTreeUrlMut && (
-            <div className="mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
+            <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
               <h3 className="text-xl font-semibold">TREE MUT SVG:</h3>
               <a href={svgTreeUrlMut} target="_blank" rel="noopener noreferrer">
                 <img src={svgTreeUrlMut} alt="TREE MUT SVG" style={{ maxWidth: '50%', height: '50%', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
@@ -288,9 +291,9 @@ const AnalysisPage = () => {
             </div>
           )}
         </div>
-        <div className="w-1/2 text-center">
+        <div className="tree-svg-box w-1/2 text-center">
           {svgTreeUrlWt && (
-            <div className="mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
+            <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
               <h3 className="text-xl font-semibold">TREE WT SVG:</h3>
               <a href={svgTreeUrlWt} target="_blank" rel="noopener noreferrer">
                 <img src={svgTreeUrlWt} alt="TREE WT SVG" style={{ maxWidth: '50%', height: '50%', backgroundColor: 'white', display: 'block', margin: 'auto' }} />

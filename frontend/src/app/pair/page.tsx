@@ -286,11 +286,7 @@ const PairPage = () => {
   
       const responseData = await response.json();
       //setAnalysisId(responseData.analysis_id);
-      const query = new URLSearchParams({
-        mut_sequence: mutantSequence,
-        wt_sequence: wildSequence,
-      }).toString();
-      router.push(`/pair/${responseData.analysis_id}?${query}`);
+      router.push(`/pair/${responseData.analysis_id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
       setIsSubmitted(false);
@@ -306,16 +302,16 @@ const PairPage = () => {
         RNA Sequence Analysis
       </h3>
       {message && (
-        <p className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400 whitespace-pre-wrap break-words">
+        <p className="message mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400 whitespace-pre-wrap break-words">
           {message}
         </p>
       )}
       {error && (
-        <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
+        <p data-testid="error-message" className="error mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
           {error}
         </p>
       )}
-  
+
       {!isSubmitted ? (
         <>
           <p className="mb-11 border-b pb-11 text-base leading-relaxed border-gray-200 dark:border-gray-600">
@@ -327,7 +323,7 @@ const PairPage = () => {
               name="mutantSequence"
               placeholder="Enter Mutant RNA Sequence"
               aria-label="Mutant RNA Sequence"
-              className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+              className="mutant-sequence mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
               value={mutantSequence}
               onChange={(e) => handleInputChange(e, setMutantSequence)}
             />
@@ -337,17 +333,17 @@ const PairPage = () => {
               type="file"
               accept=".fasta,.txt"
               aria-label="Upload Mutant RNA Sequence File"
-              className="mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+              className="mutant-sequence-file mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
               onChange={(e) => handleFileUpload(e, setMutantSequence)}
             />
           </div>
-  
+
           <input
             type="text"
             name="wildSequence"
             placeholder="Enter Wild-type RNA Sequence"
             aria-label="Wild-type RNA Sequence"
-            className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+            className="wild-sequence mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
             value={wildSequence}
             onChange={(e) => handleInputChange(e, setWildSequence)}
           />
@@ -355,29 +351,29 @@ const PairPage = () => {
             type="file"
             accept=".fasta,.txt"
             aria-label="Upload Wild-type RNA Sequence File"
-            className="mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+            className="wild-sequence-file mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
             onChange={(e) => handleFileUpload(e, setWildSequence)}
           />
           <div className="flex space-x-4">
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-orange-500 hover:bg-orange-600 dark:bg-orange-700 dark:shadow-submit-dark"
+              className="example-1 mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-orange-500 hover:bg-orange-600 dark:bg-orange-700 dark:shadow-submit-dark"
               onClick={() => handleExampleClick(1)}
             >
               Example: ddx11-rs14330
             </button>
-  
+
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-pink-500 hover:bg-pink-600 dark:bg-pink-700 dark:shadow-submit-dark"
+              className="example-2 mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-pink-500 hover:bg-pink-600 dark:bg-pink-700 dark:shadow-submit-dark"
               onClick={() => handleExampleClick(2)}
             >
               Example: vegfa-5utr
             </button>
-  
+
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-purple-500 hover:bg-purple-600 dark:bg-purple-700 dark:shadow-submit-dark"
+              className="example-3 mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-purple-500 hover:bg-purple-600 dark:bg-purple-700 dark:shadow-submit-dark"
               onClick={() => handleExampleClick(3)}
             >
               Example: rs98765
@@ -388,7 +384,7 @@ const PairPage = () => {
             name="dbSnpId"
             placeholder="Enter dbSNP ID"
             aria-label="dbSNP ID"
-            className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+            className="dbsnp-id mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
             value={dbSnpId}
             onChange={(e) => handleDbSnpIdChange(e, setDbSnpId)}
             maxLength={41}
@@ -396,7 +392,7 @@ const PairPage = () => {
           <div className="flex flex-col space-y-4">
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-green-500 hover:bg-green-600 dark:bg-green-700 dark:shadow-submit-dark"
+              className="search-dbsnp mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-green-500 hover:bg-green-600 dark:bg-green-700 dark:shadow-submit-dark"
               onClick={handleDbSnpSearch}
             >
               Search dbSNP
@@ -404,7 +400,7 @@ const PairPage = () => {
           </div>
           <button
             type="submit"
-            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:shadow-submit-dark"
+            className="submit mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:shadow-submit-dark"
             onClick={handleSubmit}
           >
             Submit
