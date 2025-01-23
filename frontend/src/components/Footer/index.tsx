@@ -27,7 +27,7 @@ const Footer = () => {
                   />
                 </Link>
                 <p className="mb-9 text-base leading-relaxed text-body-color dark:text-body-color-dark">
-                  The application was created as part of an engineering thesis of students of the Poznan University of Technology.
+                  This application was created as part of an engineering thesis of students of the Poznan University of Technology.
                 </p>
               </div>
             </div>
@@ -41,7 +41,7 @@ const Footer = () => {
                   <li>
                     <Link
                       href="/help"
-                      className="mb-4 inline-block text-base text-body-color duration-300 hover:text-primary dark:text-body-color-dark dark:hover:text-primary"
+                      className="mb-4 inline-block text-base text-body-color duration-300 hover:text-red-500 dark:text-body-color-dark dark:hover:text-red-500"
                     >
                       Help
                     </Link>
@@ -49,7 +49,7 @@ const Footer = () => {
                   <li>
                     <Link
                       href="/about"
-                      className="mb-4 inline-block text-base text-body-color duration-300 hover:text-primary dark:text-body-color-dark dark:hover:text-primary"
+                      className="mb-4 inline-block text-base text-body-color duration-300 hover:text-red-500 dark:text-body-color-dark dark:hover:text-red-500"
                     >
                       About
                     </Link>
@@ -261,3 +261,4 @@ const Footer = () => {
 };
 
 export default Footer;
+
