@@ -63,8 +63,8 @@ const Header = () => {
                         href="/about"
                         className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 ${
                           usePathName === "/about"
-                            ? "text-primary dark:text-white"
-                            : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
+                            ? "text-red-500 dark:text-white"
+                            : "text-dark hover:text-red-500 dark:text-white/70 dark:hover:text-white"
                         }`}
                       >
                         About
@@ -75,8 +75,8 @@ const Header = () => {
                         href="/help"
                         className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 ${
                           usePathName === "/help"
-                            ? "text-primary dark:text-white"
-                            : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
+                            ? "text-red-500 dark:text-white"
+                            : "text-dark hover:text-red-500 dark:text-white/70 dark:hover:text-white"
                         }`}
                       >
                         Help
@@ -87,8 +87,8 @@ const Header = () => {
                         href="/pair"
                         className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 ${
                           usePathName === "/pair"
-                            ? "text-primary dark:text-white"
-                            : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
+                            ? "text-red-500 dark:text-white"
+                            : "text-dark hover:text-red-500 dark:text-white/70 dark:hover:text-white"
                         }`}
                       >
                         Comparison
@@ -99,8 +99,8 @@ const Header = () => {
                         href="/single"
                         className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 ${
                           usePathName === "/single"
-                            ? "text-primary dark:text-white"
-                            : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
+                            ? "text-red-500 dark:text-white"
+                            : "text-dark hover:text-red-500 dark:text-white/70 dark:hover:text-white"
                         }`}
                       >
                         Top10
