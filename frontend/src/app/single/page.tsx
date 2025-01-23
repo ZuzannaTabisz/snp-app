@@ -232,6 +232,7 @@ const SinglePage = () => {
 
 
     try {
+      setMessage("Analysis submitted");
       if (!analysisId) throw new Error("Failed to start analysis (id).");
       const response = await fetch("http://localhost:8080/api/analyze/single", {
         method: "POST",
@@ -255,7 +256,7 @@ const SinglePage = () => {
   const { theme } = useTheme();
 
   return (
-    <div className="relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-800 dark:text-white sm:p-11 lg:p-8 xl:p-11">
+    <div className="relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-dark dark:text-white sm:p-11 lg:p-8 xl:p-11">
       <h3 className="mb-4 text-2xl font-bold leading-tight mt-24">
         RNA Sequence Analysis
       </h3>
@@ -351,12 +352,12 @@ const SinglePage = () => {
               style={{ width: `${progress}%` }}
             ></div>
           </div>
-          <p className="text-sm text-center">
+          <p className="text-sm text-center mb-4">
             {progress}% Completed
           </p>
           <div className="flex flex-col items-center justify-center h-full">
             <div className="loader mb-4"></div>
-            <p className="text-lg font-medium text-center">
+            <p className="text-lg font-medium text-center mb-4">
               Your request is being processed. Please wait.
             </p>
           </div>

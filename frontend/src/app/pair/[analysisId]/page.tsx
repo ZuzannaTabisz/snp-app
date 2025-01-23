@@ -93,7 +93,7 @@ const AnalysisPage = () => {
   useEffect(() => {
     if (wildSequence && mutantSequence) {
       const result = convertToAligned(wildSequence, mutantSequence);
-      const highlighted = highlightDifferences(result.wtSequence, result.mutSequence);
+      const highlighted = highlightDifferences(result.mutSequence,result.wtSequence);
       setHighlighted(highlighted);
       setMutations(result.mutations);
     }
@@ -186,7 +186,7 @@ const AnalysisPage = () => {
   const { theme } = useTheme();
 
   return (
-    <div className="analysis-page relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-800 dark:text-white sm:p-11 lg:p-8 xl:p-11">
+    <div className="analysis-page relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-dark dark:text-white sm:p-11 lg:p-8 xl:p-11">
       <h1 className="analysis-title mb-4 text-2xl font-bold leading-tight mt-24">
         Analysis Results
       </h1>
@@ -271,7 +271,7 @@ const AnalysisPage = () => {
       <div className="svg-container flex justify-between mt-6">
         <div className="svg-box w-1/2 text-center">
           {svgUrlMut && (
-            <div className="svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
+            <div className="svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
               <h3 className="text-xl font-semibold">MUT SVG:</h3>
               <a href={svgUrlMut} target="_blank" rel="noopener noreferrer">
                 <img src={svgUrlMut} alt="MUT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
@@ -281,7 +281,7 @@ const AnalysisPage = () => {
         </div>
         <div className="svg-box w-1/2 text-center">
           {svgUrlWt && (
-            <div className="svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
+            <div className="svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
               <h3 className="text-xl font-semibold">WT SVG:</h3>
               <a href={svgUrlWt} target="_blank" rel="noopener noreferrer">
                 <img src={svgUrlWt} alt="WT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
@@ -294,7 +294,7 @@ const AnalysisPage = () => {
       <div className="tree-svg-container flex justify-between mt-6">
         <div className="tree-svg-box w-1/2 text-center">
           {svgTreeUrlMut && (
-            <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
+            <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
               <h3 className="text-xl font-semibold">TREE MUT SVG:</h3>
               <a href={svgTreeUrlMut} target="_blank" rel="noopener noreferrer">
                 <img src={svgTreeUrlMut} alt="TREE MUT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
@@ -304,7 +304,7 @@ const AnalysisPage = () => {
         </div>
         <div className="tree-svg-box w-1/2 text-center">
           {svgTreeUrlWt && (
-            <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
+            <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
               <h3 className="text-xl font-semibold">TREE WT SVG:</h3>
               <a href={svgTreeUrlWt} target="_blank" rel="noopener noreferrer">
                 <img src={svgTreeUrlWt} alt="TREE WT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
