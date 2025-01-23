@@ -49,6 +49,8 @@ const AnalysisPage = () => {
     console.log("RNAdistance: ", data.RNAdistance);
     setMutantSequence(data.mut_sequence);
     setWildSequence(data.wt_sequence);
+    console.log("Mutant:",data.mut_sequence)
+    console.log("Wild type:",data.wt_sequence) 
   }, [analysisId]);
   
   const fetchDownloadUrl = useCallback(async () => {
@@ -231,15 +233,24 @@ const AnalysisPage = () => {
               <strong>Results:</strong><br />
               f: {rnaDistance.RNAdistance_result.f}, h: {rnaDistance.RNAdistance_result.h}<br /><br />
               <strong>Backtrack:</strong><br />
-              {rnaDistance.RNAdistance_backtrack
+              {[rnaDistance.RNAdistance_backtrack
                 .split("\n")
                 .filter(line => line.trim() !== "")
-                .slice(0, 4)
-                .map((line, index) => (
-                  <div key={index} className="backtrack-box mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
-                    {line}
-                  </div>
-                ))}<br /><br />
+                .slice(0, 2),
+                rnaDistance.RNAdistance_backtrack
+                .split("\n")
+                .filter(line => line.trim() !== "")
+                .slice(2, 4)
+              ].map((group, index) => (
+                <div key={index} className="backtrack-box mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
+                  {group.map((line, lineIndex) => (
+                    <React.Fragment key={lineIndex}>
+                      {line}
+                      {lineIndex < group.length - 1 && <br />}
+                    </React.Fragment>
+                  ))}
+                </div>
+              ))}<br /><br />
             </span>
           </p>
         </div>
@@ -286,7 +297,7 @@ const AnalysisPage = () => {
             <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
               <h3 className="text-xl font-semibold">TREE MUT SVG:</h3>
               <a href={svgTreeUrlMut} target="_blank" rel="noopener noreferrer">
-                <img src={svgTreeUrlMut} alt="TREE MUT SVG" style={{ maxWidth: '50%', height: '50%', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
+                <img src={svgTreeUrlMut} alt="TREE MUT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
               </a>
             </div>
           )}
@@ -296,7 +307,7 @@ const AnalysisPage = () => {
             <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600">
               <h3 className="text-xl font-semibold">TREE WT SVG:</h3>
               <a href={svgTreeUrlWt} target="_blank" rel="noopener noreferrer">
-                <img src={svgTreeUrlWt} alt="TREE WT SVG" style={{ maxWidth: '50%', height: '50%', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
+                <img src={svgTreeUrlWt} alt="TREE WT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
               </a>
             </div>
           )}

@@ -20,44 +20,72 @@ echo "-----------------------------------"
 
 function plot {
     echo $1 $2
-    #generating visualization
-    RNAplot --layout 4 --post "$("$SCRIPT_DIR/99-find-differences" $1 $2 | awk 'NR == 1')" < $1
-    #modifying post scirpt - color change
-    sed -i \
-        -e '/^\/outlinecolor/ c /outlinecolor {0.7 setgray} bind def' \
-        -e '/fsize 2 div 0/ c fsize 2 div 0 360 arc gsave stroke grestore fill' \
-        rna.eps
-    #conversion
-    epstopdf rna.eps
-    pdf2svg rna.pdf "${1%.txt}.svg"
-    svgo "${1%.txt}.svg"
-    rm rna.eps rna.pdf
+    
 
+    SEQ1=$(head -n 1 "$CURRENT_DIR/$1")
+    SEQ2=$(head -n 1 "$CURRENT_DIR/$2")
+    
+    #first difference between sequences
+    FIRST_DIFF_INDEX=0
+    for ((i=0; i<${#SEQ1}; i++)); do
+        if [ "${SEQ1:$i:1}" != "${SEQ2:$i:1}" ]; then
+            FIRST_DIFF_INDEX=$((i))
+            break
+        fi
+    done
+    
+    echo "First difference index: $FIRST_DIFF_INDEX"
+    
+    #longer sequence = coloring a nucleotide
+    if [ ${#SEQ1} -gt ${#SEQ2} ]; then
+        LONGER_SEQ="$1"
+    elif [ ${#SEQ2} -gt ${#SEQ1} ]; then
+        LONGER_SEQ="$2"
+    else
+        LONGER_SEQ="both"
+    fi
+    
 
-    echo "??----------------------------------"
-    echo "Aktualna zawartość katalogu $CURRENT_DIR:"
-    ls -l "$CURRENT_DIR"
-    echo "-----------------------------------"
+    
+        RNAplot --layout 4 --post "$("$SCRIPT_DIR/99-find-differences" "$CURRENT_DIR/$1" "$CURRENT_DIR/$2" | awk 'NR == 1')" < "$CURRENT_DIR/$1"
+        
 
-
-    #same process for mut
-    RNAplot --layout 4 --post "$("$SCRIPT_DIR/99-find-differences" $1 $2 | awk 'NR == 2')" < $2
-
-
-    echo "*??----------------------------------"
-    echo "Aktualna zawartość katalogu $CURRENT_DIR:"
-    ls -l "$CURRENT_DIR"
-    echo "-----------------------------------"
-
-
-    sed -i \
-        -e '/^\/outlinecolor/ c /outlinecolor {0.7 setgray} bind def' \
-        -e '/fsize 2 div 0/ c fsize 2 div 0 360 arc gsave stroke grestore fill' \
-        rna.eps
-    epstopdf rna.eps
-    pdf2svg rna.pdf "${2%.txt}.svg"
-    svgo "${2%.txt}.svg"
-    rm rna.eps rna.pdf
+        sed -i \
+            -e '/^\/outlinecolor/ c /outlinecolor {0.7 setgray} bind def' \
+            -e '/fsize 2 div 0/ c fsize 2 div 0 360 arc gsave stroke grestore fill' \
+            rna.eps
+        
+        if [ "$LONGER_SEQ" == "$1" ] || [ "$LONGER_SEQ" == "both" ]; then
+        sed -i \
+            -e "/^\/drawbases {/,/forall/ s/dup sequence exch 1 getinterval cshow/dup $FIRST_DIFF_INDEX eq { 0 1 0 setrgbcolor } { seqcolor } ifelse &/" \
+            rna.eps
+        fi
+        #conversion
+        epstopdf rna.eps
+        pdf2svg rna.pdf "${1%.txt}.svg"
+        svgo "${1%.txt}.svg"
+        rm rna.eps rna.pdf
+    
+    
+    
+        RNAplot --layout 4 --post "$("$SCRIPT_DIR/99-find-differences" "$CURRENT_DIR/$1" "$CURRENT_DIR/$2" | awk 'NR == 2')" < "$CURRENT_DIR/$2"
+        
+        
+        sed -i \
+            -e '/^\/outlinecolor/ c /outlinecolor {0.7 setgray} bind def' \
+            -e '/fsize 2 div 0/ c fsize 2 div 0 360 arc gsave stroke grestore fill' \
+            rna.eps
+        if [ "$LONGER_SEQ" == "$2" ] || [ "$LONGER_SEQ" == "both" ]; then
+        sed -i \
+            -e "/^\/drawbases {/,/forall/ s/dup sequence exch 1 getinterval cshow/dup $FIRST_DIFF_INDEX eq { 0 1 0 setrgbcolor } { seqcolor } ifelse &/" \
+            rna.eps
+        fi
+        #conversion
+        epstopdf rna.eps
+        pdf2svg rna.pdf "${2%.txt}.svg"
+        svgo "${2%.txt}.svg"
+        rm rna.eps rna.pdf
+    
 }
 
 
