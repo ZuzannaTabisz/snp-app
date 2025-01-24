@@ -199,6 +199,7 @@ const SinglePage = () => {
       if (!response.ok) throw new Error("Failed to fetch sequence for dbSNP ID.");
 
       const data = await response.json();
+      console.log("dbSNP data:", data);
       setWildSequence(data.wldType);
       
 

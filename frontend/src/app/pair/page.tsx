@@ -322,6 +322,27 @@ const PairPage = () => {
           <p className="mb-11 border-b pb-11 text-base leading-relaxed border-gray-200 dark:border-gray-600">
             Please enter your RNA sequence for analysis.
           </p>
+
+
+          <div style={{ overflow: "auto"}}>
+            <input
+              type="text"
+              name="wildSequence"
+              placeholder="Enter Wild-type RNA Sequence"
+              aria-label="Wild-type RNA Sequence"
+              className="wild-sequence mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+              value={wildSequence}
+              onChange={(e) => handleInputChange(e, setWildSequence)}
+            />
+          </div>
+            <input
+              type="file"
+              accept=".fasta,.txt"
+              aria-label="Upload Wild-type RNA Sequence File"
+              className="wild-sequence-file mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+              onChange={(e) => handleFileUpload(e, setWildSequence)}
+            /> 
+
           <div style={{ overflow: "auto"}}>
             <input
               type="text"
@@ -343,22 +364,7 @@ const PairPage = () => {
             />
           </div>
 
-          <input
-            type="text"
-            name="wildSequence"
-            placeholder="Enter Wild-type RNA Sequence"
-            aria-label="Wild-type RNA Sequence"
-            className="wild-sequence mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-            value={wildSequence}
-            onChange={(e) => handleInputChange(e, setWildSequence)}
-          />
-          <input
-            type="file"
-            accept=".fasta,.txt"
-            aria-label="Upload Wild-type RNA Sequence File"
-            className="wild-sequence-file mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-            onChange={(e) => handleFileUpload(e, setWildSequence)}
-          />
+          
           <div className="flex space-x-4">
             <button
               type="button"

@@ -200,17 +200,18 @@ const AnalysisPage = () => {
       <div className="submitted-sequences mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
         <h3 className="text-xl font-semibold">Submitted Sequences:</h3>
         <div>
-          <strong>Mutant Sequence:</strong>
-          <div className="sequence-box mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
-            <span className="font-mono">{highlighted ? highlighted.highlightedMutant : "N/A"}</span>
-          </div>
-        </div>
-        <div>
           <strong>Wild-Type Sequence:</strong>
           <div className="sequence-box mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
             <span className="font-mono">{highlighted ? highlighted.highlightedWild : "N/A"}</span>
           </div>
         </div>
+        <div>
+          <strong>Mutant Sequence:</strong>
+          <div className="sequence-box mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
+            <span className="font-mono">{highlighted ? highlighted.highlightedMutant : "N/A"}</span>
+          </div>
+        </div>
+        
       </div>
 
       {rnaPdist && rnaFold && rnaDistance && (
