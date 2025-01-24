@@ -1,5 +1,10 @@
 FROM python:3.9 AS backend
 
+# Set proxy environment variables at build time AND runtime
+
+ENV PYTHONUNBUFFERED=1
+ENV EVENTLET_NO_GREENDNS=yes
+
 # libraries instalation
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bc \
@@ -41,6 +46,4 @@ RUN chmod -R 777 pipeline
 EXPOSE 8080
 
 # running app
-#CMD ["python", "app.py"]
-CMD ["gunicorn", "--workers", "1", "--worker-class", "eventlet", "--bind", "0.0.0.0:8080", "app:app"]
-
+CMD ["gunicorn", "--worker-class", "eventlet", "--workers", "1", "--bind", "0.0.0.0:8080", "--timeout", "300", "app:app"]

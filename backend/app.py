@@ -217,7 +217,7 @@ def run_step(step_name, command, cwd, analysis_id):
         
     except subprocess.CalledProcessError as e:
         logger.error(f"{step_name} failed: {e}")
-        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': 'failed', 'step': step_name, 'error': str(e)}, namespace=f'/single')
+        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': 'failed', 'step': step_name, 'error': str(e)}, namespace='/{analysis_id}')
         with app.app_context():
             db_func.update_table_pair(analysis_id, 'error')
         return False
@@ -264,7 +264,7 @@ def run_pipeline(mutant_sequence, wild_sequence, analysis_id):
     #socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis completed"}, broadcast=True, namespace=f'/{analysis_id}')
 
 
-#helper functions form dbSNP
+#helper functions for dbSNP
 
 def get_sequence(chromosome, start_pos, end_pos):
     """
@@ -282,14 +282,11 @@ def get_sequence(chromosome, start_pos, end_pos):
     logger.debug(f"Request params: {params}")
 
     try:
-
         logger.debug("Sending GET request to Ensembl API")
         response = requests.get(url, headers=headers, params=params)
 
-
         response.raise_for_status()
         logger.debug(f"Response Status Code: {response.status_code}")
-
 
         logger.debug("Parsing JSON response")
         response_json = response.json()
@@ -307,40 +304,15 @@ def get_sequence(chromosome, start_pos, end_pos):
         logger.error(f"Unexpected error occurred: {str(e)}")
         return {"error": "Unexpected error"}
 
-def check_internet_connection(url="http://www.google.com", verify=False):
-    logger.debug(f"Checking internet connection to {url}")
-
-    try:
-        logger.debug(f"Sending GET request to {url} with SSL verification set to {verify}")
-        response = requests.get(url, timeout=5, verify=verify)
-
-
-        if response.status_code == 200:
-            logger.debug(f"Connection successful. Status code: {response.status_code}")
-            return True
-        else:
-            logger.warning(f"Connection failed. Status code: {response.status_code}")
-            return False
-    except requests.ConnectionError as e:
-        logger.error(f"Connection error: {str(e)}")
-        return False
-    except requests.exceptions.Timeout as e:
-        logger.error(f"Timeout error: {str(e)}")
-        return False
-    except requests.exceptions.RequestException as e:
-        logger.error(f"General request exception: {str(e)}")
-        return False
-
-
-#https://stackoverflow.com/questions/23013220/max-retries-exceeded-with-url-in-requests
 
 def search_clinical_tables(snp_id):
-    logger.debug("Checking internet connection")
-
-    if not check_internet_connection():
-        logger.error("No internet connection available.")
-
-
+    """
+    Search clinicaltables.nlm.nih.gov API for SNP information
+    Args:
+        snp_id (str): RS ID of the SNP (e.g., 'rs328')
+    Returns:
+        dict: Response from clinical tables API
+    """
     base_url = "https://clinicaltables.nlm.nih.gov/api/snps/v3/search"
     params = {
         "terms": snp_id,
@@ -348,50 +320,12 @@ def search_clinical_tables(snp_id):
         "df": "rsNum,38.alleles,38.chr,38.pos",
     }
 
-    logger.debug(f"Starting search for SNP ID: {snp_id}")
-    logger.debug(f"Request URL: {base_url}")
-    logger.debug(f"Request parameters: {params}")
-
     try:
-
-        session = requests.Session()
-
-
-        logger.debug("Sending GET request to Clinical Tables API")
-
-        response = session.get(base_url, params=params, timeout=10)
-
-        logger.debug("Sending GET request to Clinical Tables API")
-        response = requests.get(base_url, params=params, timeout = 10)
+        response = requests.get(base_url, params=params)
         response.raise_for_status()
-
-        logger.debug(f"Response Status Code: {response.status_code}")
-
-
-        response.raise_for_status()
-        logger.debug("Response received successfully, parsing JSON")
-
-
-        response_json = response.json()
-        logger.debug(f"Received JSON response: {response_json}")
-
-        if not response_json or not isinstance(response_json, list) or len(response_json) < 4:
-            logger.warning(f"Unexpected response structure: {response_json}")
-            return {"error": "Unexpected response structure"}
-
-        logger.debug(f"Successfully retrieved SNP data for {snp_id}.")
-        return response_json
-
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request failed: {str(e)}")
-        return {"error": "Request failed"}
-    except ValueError as e:
-        logger.error(f"JSON decoding error: {str(e)}")
-        return {"error": "Invalid JSON response"}
+        return response.json()
     except Exception as e:
-        logger.error(f"Unexpected error occurred: {str(e)}")
-        return {"error": "Unexpected error"}
-
+        return {"error": str(e)}
 
 
 """API endpoints"""
@@ -412,7 +346,7 @@ def analyze_pair():
         return jsonify({'error': 'Invalid input data'}), 400
 
     #analysis_id = str(uuid.uuid4())
-    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
+    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace='/{analysis_id}')
 
     with app.app_context():
         db_func.save_to_table_pair(analysis_id, wild_sequence, mutant_sequence, 'pending')
@@ -508,7 +442,7 @@ def run_single(wild_sequence, analysis_id, script_directory, analysis_dir):
                 #with lock:
                 processed_mutations += 1
                 progress = (processed_mutations / total_mutations) * 100
-                socketio.emit('progress_update', { 'progress': f"{progress:.2f}"}, broadcast=True, namespace=f'/{analysis_id}')
+                socketio.emit('progress_update', { 'progress': f"{progress:.2f}"}, broadcast=True, namespace='/{analysis_id}')
                 logger.info(f"Progress: {progress:.2f}%")
 
                 if result:
@@ -562,7 +496,7 @@ def run_single(wild_sequence, analysis_id, script_directory, analysis_dir):
             db_func.update_table_single(analysis_id, 'error')
             for rank in range(1, 11):   
                 db_func.update_table_top_10(analysis_id, 'empty', str(rank), 'error')
-        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis failed"}, broadcast=True, namespace=f'/{analysis_id}')
+        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis failed"}, broadcast=True, namespace='/{analysis_id}')
 
 @app.route('/api/analyze/single', methods=['POST'])
 def analyze_single():
@@ -579,7 +513,7 @@ def analyze_single():
         return jsonify({'error': 'Invalid input data'}), 400
 
     #analysis_id = str(uuid.uuid4())
-    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
+    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace='/{analysis_id}')
     
 
     # saving wt sequence and analysys id to db

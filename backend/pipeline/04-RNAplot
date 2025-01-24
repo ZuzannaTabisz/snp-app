@@ -57,7 +57,7 @@ function plot {
         
         if [ "$LONGER_SEQ" == "$1" ] || [ "$LONGER_SEQ" == "both" ]; then
         sed -i \
-            -e "/^\/drawbases {/,/forall/ s/dup sequence exch 1 getinterval cshow/dup $FIRST_DIFF_INDEX eq { 0 1 0 setrgbcolor } { seqcolor } ifelse &/" \
+            -e "/^\/drawbases {/,/forall/ s/dup sequence exch 1 getinterval cshow/dup $FIRST_DIFF_INDEX eq { 1 0.75 0.8 setrgbcolor } { seqcolor } ifelse &/" \
             rna.eps
         fi
         #conversion
@@ -77,7 +77,7 @@ function plot {
             rna.eps
         if [ "$LONGER_SEQ" == "$2" ] || [ "$LONGER_SEQ" == "both" ]; then
         sed -i \
-            -e "/^\/drawbases {/,/forall/ s/dup sequence exch 1 getinterval cshow/dup $FIRST_DIFF_INDEX eq { 0 1 0 setrgbcolor } { seqcolor } ifelse &/" \
+            -e "/^\/drawbases {/,/forall/ s/dup sequence exch 1 getinterval cshow/dup $FIRST_DIFF_INDEX eq { 1 0.75 0.8 setrgbcolor } { seqcolor } ifelse &/" \
             rna.eps
         fi
         #conversion

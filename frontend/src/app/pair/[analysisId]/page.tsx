@@ -274,7 +274,7 @@ const AnalysisPage = () => {
             <div className="svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
               <h3 className="text-xl font-semibold">MUT SVG:</h3>
               <a href={svgUrlMut} target="_blank" rel="noopener noreferrer">
-                <img src={svgUrlMut} alt="MUT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
+                <img src={svgUrlMut} alt="MUT SVG" style={{  maxWidth: '90%', maxHeight: '90%', width: 'auto', height: 'auto', objectFit: 'contain', backgroundColor: 'white', display: 'block', margin: 'auto', borderRadius: '8px' }} />
               </a>
             </div>
           )}
@@ -284,7 +284,7 @@ const AnalysisPage = () => {
             <div className="svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
               <h3 className="text-xl font-semibold">WT SVG:</h3>
               <a href={svgUrlWt} target="_blank" rel="noopener noreferrer">
-                <img src={svgUrlWt} alt="WT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
+                <img src={svgUrlWt} alt="WT SVG" style={{  maxWidth: '90%', maxHeight: '90%', width: 'auto', height: 'auto', objectFit: 'contain', backgroundColor: 'white', display: 'block', margin: 'auto', borderRadius: '8px' }} />
               </a>
             </div>
           )}
@@ -297,7 +297,7 @@ const AnalysisPage = () => {
             <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
               <h3 className="text-xl font-semibold">TREE MUT SVG:</h3>
               <a href={svgTreeUrlMut} target="_blank" rel="noopener noreferrer">
-                <img src={svgTreeUrlMut} alt="TREE MUT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
+                <img src={svgTreeUrlMut} alt="TREE MUT SVG" style={{ maxWidth: '90%', maxHeight: '90%', width: 'auto', height: 'auto', objectFit: 'contain', backgroundColor: 'white', display: 'block', margin: 'auto', borderRadius: '8px' }} />
               </a>
             </div>
           )}
@@ -307,7 +307,7 @@ const AnalysisPage = () => {
             <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
               <h3 className="text-xl font-semibold">TREE WT SVG:</h3>
               <a href={svgTreeUrlWt} target="_blank" rel="noopener noreferrer">
-                <img src={svgTreeUrlWt} alt="TREE WT SVG" style={{ maxWidth: '50%', height: 'auto', backgroundColor: 'white', display: 'block', margin: 'auto' }} />
+                <img src={svgTreeUrlWt} alt="TREE WT SVG" style={{  maxWidth: '90%', maxHeight: '90%', width: 'auto', height: 'auto', objectFit: 'contain', backgroundColor: 'white', display: 'block', margin: 'auto', borderRadius: '8px' }} />
               </a>
             </div>
           )}

@@ -89,7 +89,7 @@ def add_edges(graph, subtree, previous_parent, current_parent, common_positions,
                         #print(f'Adding orange {unique_label} (Element: {element}, Value: {values[count]}')
                         color = "orange"
                 else:
-                    color = "red"
+                    color = "orangered"
 
                 graph.node(unique_label, re.sub(r'_', '', element), color="black", fillcolor=color, style="filled", shape="ellipse")
 

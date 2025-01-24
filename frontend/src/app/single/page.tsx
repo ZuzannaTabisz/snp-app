@@ -27,6 +27,9 @@ const SinglePage = () => {
     const socket = io(`http://localhost:8080/${analysisId}`, {
       transports: ["websocket"],
       autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     socket.on("connect", () => {
@@ -196,7 +199,7 @@ const SinglePage = () => {
       if (!response.ok) throw new Error("Failed to fetch sequence for dbSNP ID.");
 
       const data = await response.json();
-      setWildSequence(data.sequence);
+      setWildSequence(data.wldType);
       
 
       setFetchDbSnp(true);
