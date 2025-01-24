@@ -573,6 +573,7 @@ def save_to_table_single(analysis_id, wild_sequence, processing_status):
 
 # Konfiguracja połączenia z bazą danych
 db_config = {
+    'host': os.getenv('MYSQL_HOST', 'http://localhost:8081'),
     'host': os.getenv('MYSQL_HOST', 'mysql'),
     'user': os.getenv('MYSQL_USER', 'root'),
     'password': os.getenv('MYSQL_PASSWORD', 'qwas'),

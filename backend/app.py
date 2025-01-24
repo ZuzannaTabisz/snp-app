@@ -217,7 +217,7 @@ def run_step(step_name, command, cwd, analysis_id):
         
     except subprocess.CalledProcessError as e:
         logger.error(f"{step_name} failed: {e}")
-        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': 'failed', 'step': step_name, 'error': str(e)}, namespace='/{analysis_id}')
+        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': 'failed', 'step': step_name, 'error': str(e)}, namespace=f'/{analysis_id}')
         with app.app_context():
             db_func.update_table_pair(analysis_id, 'error')
         return False
@@ -346,7 +346,7 @@ def analyze_pair():
         return jsonify({'error': 'Invalid input data'}), 400
 
     #analysis_id = str(uuid.uuid4())
-    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace='/{analysis_id}')
+    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
 
     with app.app_context():
         db_func.save_to_table_pair(analysis_id, wild_sequence, mutant_sequence, 'pending')
@@ -442,7 +442,7 @@ def run_single(wild_sequence, analysis_id, script_directory, analysis_dir):
                 #with lock:
                 processed_mutations += 1
                 progress = (processed_mutations / total_mutations) * 100
-                socketio.emit('progress_update', { 'progress': f"{progress:.2f}"}, broadcast=True, namespace='/{analysis_id}')
+                socketio.emit('progress_update', { 'progress': f"{progress:.2f}"}, broadcast=True, namespace=f'/{analysis_id}')
                 logger.info(f"Progress: {progress:.2f}%")
 
                 if result:
@@ -496,7 +496,7 @@ def run_single(wild_sequence, analysis_id, script_directory, analysis_dir):
             db_func.update_table_single(analysis_id, 'error')
             for rank in range(1, 11):   
                 db_func.update_table_top_10(analysis_id, 'empty', str(rank), 'error')
-        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis failed"}, broadcast=True, namespace='/{analysis_id}')
+        socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis failed"}, broadcast=True, namespace=f'/{analysis_id}')
 
 @app.route('/api/analyze/single', methods=['POST'])
 def analyze_single():
@@ -513,7 +513,7 @@ def analyze_single():
         return jsonify({'error': 'Invalid input data'}), 400
 
     #analysis_id = str(uuid.uuid4())
-    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace='/{analysis_id}')
+    socketio.emit('task_status', {'analysis_id': analysis_id, 'status': "Analysis started"}, broadcast=True, namespace=f'/{analysis_id}')
     
 
     # saving wt sequence and analysys id to db

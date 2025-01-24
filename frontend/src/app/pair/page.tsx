@@ -28,6 +28,7 @@ const PairPage = () => {
 
   useEffect(() => {
     const socket = io(`http://localhost:8080/${analysisId}`, {
+      path: "/socket.io",
       transports: ["websocket"],
       autoConnect: true,
       reconnection: true,

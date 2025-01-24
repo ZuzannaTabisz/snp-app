@@ -25,7 +25,9 @@ const SinglePage = () => {
 
   useEffect(() => {
     const socket = io(`http://localhost:8080/${analysisId}`, {
+
       transports: ["websocket"],
+      path: "/socket.io",
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 5,

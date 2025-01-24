@@ -218,15 +218,16 @@ const AnalysisPage = () => {
         <div className="analysis-results mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
           <h3 className="text-xl font-semibold">Analysis Results:</h3>
           <p className="mt-4 whitespace-pre-wrap break-words">
-            <strong>Mutation:</strong> {mutations.length > 0 ? mutations.join(", ") : "N/A"}<br />
+            <strong>Mutation:</strong> {mutations.length > 0 ? mutations.join(", ") : "N/A"}<br /><br />
 
             <strong>RNApdist:</strong><br />
             <span className="font-mono">{rnaPdist.toFixed(2)}</span><br /><br />
 
             <strong>RNAfold:</strong><br />
             <span className="font-mono">
+              Wild Type Energy: {rnaFold.wild_type_energy} kcal/mol<br />
               Mutant Energy: {rnaFold.mutant_energy} kcal/mol<br />
-              Wild Type Energy: {rnaFold.wild_type_energy} kcal/mol
+              
             </span><br /><br />
 
             <strong>RNAdistance:</strong><br />
@@ -271,16 +272,6 @@ const AnalysisPage = () => {
 
       <div className="svg-container flex justify-between mt-6">
         <div className="svg-box w-1/2 text-center">
-          {svgUrlMut && (
-            <div className="svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
-              <h3 className="text-xl font-semibold">MUT SVG:</h3>
-              <a href={svgUrlMut} target="_blank" rel="noopener noreferrer">
-                <img src={svgUrlMut} alt="MUT SVG" style={{  maxWidth: '90%', maxHeight: '90%', width: 'auto', height: 'auto', objectFit: 'contain', backgroundColor: 'white', display: 'block', margin: 'auto', borderRadius: '8px' }} />
-              </a>
-            </div>
-          )}
-        </div>
-        <div className="svg-box w-1/2 text-center">
           {svgUrlWt && (
             <div className="svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
               <h3 className="text-xl font-semibold">WT SVG:</h3>
@@ -290,19 +281,20 @@ const AnalysisPage = () => {
             </div>
           )}
         </div>
-      </div>
-
-      <div className="tree-svg-container flex justify-between mt-6">
-        <div className="tree-svg-box w-1/2 text-center">
-          {svgTreeUrlMut && (
-            <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
-              <h3 className="text-xl font-semibold">TREE MUT SVG:</h3>
-              <a href={svgTreeUrlMut} target="_blank" rel="noopener noreferrer">
-                <img src={svgTreeUrlMut} alt="TREE MUT SVG" style={{ maxWidth: '90%', maxHeight: '90%', width: 'auto', height: 'auto', objectFit: 'contain', backgroundColor: 'white', display: 'block', margin: 'auto', borderRadius: '8px' }} />
+        <div className="svg-box w-1/2 text-center">
+          {svgUrlMut && (
+            <div className="svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
+              <h3 className="text-xl font-semibold">MUT SVG:</h3>
+              <a href={svgUrlMut} target="_blank" rel="noopener noreferrer">
+                <img src={svgUrlMut} alt="MUT SVG" style={{  maxWidth: '90%', maxHeight: '90%', width: 'auto', height: 'auto', objectFit: 'contain', backgroundColor: 'white', display: 'block', margin: 'auto', borderRadius: '8px' }} />
               </a>
             </div>
           )}
         </div>
+        
+      </div>
+
+      <div className="tree-svg-container flex justify-between mt-6">
         <div className="tree-svg-box w-1/2 text-center">
           {svgTreeUrlWt && (
             <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
@@ -313,6 +305,17 @@ const AnalysisPage = () => {
             </div>
           )}
         </div>
+        <div className="tree-svg-box w-1/2 text-center">
+          {svgTreeUrlMut && (
+            <div className="tree-svg-content mb-4 border-2 p-4 rounded-sm bg-white border-gray-300 dark:bg-gray-dark dark:border-gray-600">
+              <h3 className="text-xl font-semibold">TREE MUT SVG:</h3>
+              <a href={svgTreeUrlMut} target="_blank" rel="noopener noreferrer">
+                <img src={svgTreeUrlMut} alt="TREE MUT SVG" style={{ maxWidth: '90%', maxHeight: '90%', width: 'auto', height: 'auto', objectFit: 'contain', backgroundColor: 'white', display: 'block', margin: 'auto', borderRadius: '8px' }} />
+              </a>
+            </div>
+          )}
+        </div>
+        
       </div>
     </div>
   );
