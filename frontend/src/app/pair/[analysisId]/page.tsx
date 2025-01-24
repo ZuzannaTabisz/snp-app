@@ -228,7 +228,7 @@ const AnalysisPage = () => {
               Wild Type Energy: {rnaFold.wild_type_energy} kcal/mol<br />
               Mutant Energy: {rnaFold.mutant_energy} kcal/mol<br />
               
-            </span><br /><br />
+            </span><br />
 
             <strong>RNAdistance:</strong><br />
             <span className="font-mono">

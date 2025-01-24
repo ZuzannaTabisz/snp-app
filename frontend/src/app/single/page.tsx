@@ -202,7 +202,7 @@ const SinglePage = () => {
 
       const data = await response.json();
       console.log("dbSNP data:", data);
-      setWildSequence(data.wldType);
+      setWildSequence(data.wildType.slice(0, -1));
       
 
       setFetchDbSnp(true);
@@ -217,7 +217,7 @@ const SinglePage = () => {
     setIsSubmitted(true);
     //setAnalysisId(newAnalysisId);
     console.log("Generated UUID:", analysisId);
-    if (!wildSequence || fetchDbSnp) {
+    if (!(wildSequence || fetchDbSnp)) {
       setError("Please provide a wild-type sequence.");
       setIsSubmitted(false);
       return;
@@ -344,7 +344,7 @@ const SinglePage = () => {
           </div>
           <button
             type="submit"
-            className="submit mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:shadow-submit-dark"
+            className="submit mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 bg-primary hover:bg-primary-dark dark:bg-primary-dark dark:shadow-submit-dark"
             onClick={handleSubmit}
           >
             Submit
