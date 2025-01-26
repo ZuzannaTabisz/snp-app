@@ -286,20 +286,29 @@ const SinglePage = () => {
             <input
               type="text"
               name="wildSequence"
-              placeholder="Enter Wild-type RNA Sequence"
+              placeholder="Enter Wild-Type RNA Sequence"
               aria-label="Wild-type RNA Sequence"
               className="wild-sequence mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
               value={wildSequence}
               onChange={(e) => handleInputChange(e, setWildSequence)}
             />
           </div>
-          <input
-            type="file"
-            accept=".fasta,.txt"
-            aria-label="Upload RNA Sequence File"
-            className="wild-sequence-file mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-            onChange={(e) => handleFileUpload(e, setWildSequence)}
-          />
+          <div className="file-upload mb-5">
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
+              >
+                Upload File
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                accept=".fasta,.txt"
+                lang="en"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e, setWildSequence)}
+              />
+          </div>
           <div className="flex space-x-4">
             <button
               type="button"

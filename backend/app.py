@@ -23,7 +23,7 @@ import db_func
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
-socketio = SocketIO(app, cors_allowed_origins="*", path="/socket.io")
+socketio = SocketIO(app, cors_allowed_origins="*", path="/socket.io",async_mode='eventlet')
 
 
 
@@ -170,7 +170,7 @@ def save_from_file_to_database(analysis_id):
 
     for filename in file_save_to_db_as_path:
         file_path = os.path.join(pipeline_dir, filename)
-        logger.debug(f"{file_path}")
+        #logger.debug(f"{file_path}")
         if os.path.exists(file_path):
             if filename == 'mut-dotbracket.svg':
                 file_mut_dotbracket_svg_found = True
@@ -276,21 +276,21 @@ def get_sequence(chromosome, start_pos, end_pos):
     url = f"{base_url}/{region}"
     params = {"coord_system_version": "GRCh38"}
 
-    logger.debug("Preparing to fetch sequence data")
+    #logger.debug("Preparing to fetch sequence data")
     logger.debug(f"Request URL: {url}")
-    logger.debug(f"Request headers: {headers}")
-    logger.debug(f"Request params: {params}")
+    #logger.debug(f"Request headers: {headers}")
+    #logger.debug(f"Request params: {params}")
 
     try:
-        logger.debug("Sending GET request to Ensembl API")
+        #logger.debug("Sending GET request to Ensembl API")
         response = requests.get(url, headers=headers, params=params)
 
         response.raise_for_status()
-        logger.debug(f"Response Status Code: {response.status_code}")
+        #logger.debug(f"Response Status Code: {response.status_code}")
 
-        logger.debug("Parsing JSON response")
+        #logger.debug("Parsing JSON response")
         response_json = response.json()
-        logger.debug(f"Received JSON response: {response_json}")
+        #logger.debug(f"Received JSON response: {response_json}")
 
         return response_json
 
@@ -339,7 +339,7 @@ def analyze_pair():
     mutant_sequence = data.get('mutantSequence')
     wild_sequence = data.get('wildSequence')
     analysis_id = data.get('analysisId')
-    logger.debug("Analysis started with ID: {analysis_id}")
+    logger.debug(f"Analysis started with ID: {analysis_id}")
     logger.debug(f"Mutant sequence: {mutant_sequence}, Wild sequence: {wild_sequence}")
 
     if not wild_sequence or not mutant_sequence:
@@ -374,7 +374,7 @@ def read_from_databse(analysis_id):
     if isinstance(sequences, tuple):
         return sequences  
 
-    logger.info("Before return")
+    #logger.info("Before return")
     return jsonify({
         'RNApdist': pdist_result,
         'RNAfold': fold_result,
@@ -443,7 +443,7 @@ def run_single(wild_sequence, analysis_id, script_directory, analysis_dir):
                 processed_mutations += 1
                 progress = (processed_mutations / total_mutations) * 100
                 socketio.emit('progress_update', { 'progress': f"{progress:.2f}"}, broadcast=True, namespace=f'/{analysis_id}')
-                logger.info(f"Progress: {progress:.2f}%")
+                #logger.info(f"Progress: {progress:.2f}%")
 
                 if result:
                     results.append(result)
@@ -506,7 +506,7 @@ def analyze_single():
 
     wild_sequence = data.get('wildSequence')
     analysis_id = data.get('analysisId')
-    logger.debug("Analysis started with ID: {analysis_id}")
+    logger.debug(f"Analysis started with ID: {analysis_id}")
     logger.debug(f"Wild sequence: {wild_sequence}")
 
     if not wild_sequence:
@@ -520,7 +520,9 @@ def analyze_single():
     with app.app_context():
         db_func.save_to_table_single(analysis_id, wild_sequence, 'pending')
         for rank in range(1, 11):
-            id = str(uuid.uuid4())   
+            
+            id = str(uuid.uuid4())
+            #logger.debug(f"uuid: {analysis_id}, id: {id}")  
             db_func.save_to_table_top_10(id, analysis_id, 'empty', rank, 'pending')
 
 
@@ -571,7 +573,7 @@ def get_csv(analysis_id):
         logger.debug(f"Wild sequence: {wild_sequence}")
         logger.debug(f"Mutant sequences: {mutant_sequences}")
 
-        logger.debug(f"csv data: {csv_data}")
+        #logger.debug(f"csv data: {csv_data}")
         return jsonify({
             "analysis_id": analysis_id,
             "csv_data": csv_data,

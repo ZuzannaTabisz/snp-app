@@ -56,3 +56,20 @@ http://localhost:8080/analysis-results
 http://localhost:3000
 
 ```
+
+
+# Running tests for backend
+
+```
+ docker exec -it backend /bin/bash 
+
+coverage run -m unittest test_app.py
+coverage report
+
+```
+
+# Running tests from frontend
+
+```
+nmp run test:coverage
+```

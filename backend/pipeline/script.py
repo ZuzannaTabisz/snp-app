@@ -78,7 +78,7 @@ def generate_mutated_sequences(wild_sequence, mutations):
 
 def process_mutation(key, mutation, script_directory, sequences_directory,wild_sequence):
     try:
-        logger.debug(f"Processing mutation: {key}")
+        #logger.debug(f"Processing mutation: {key}")
 
         
         with tempfile.TemporaryDirectory(dir=sequences_directory) as mutation_dir:
@@ -86,13 +86,13 @@ def process_mutation(key, mutation, script_directory, sequences_directory,wild_s
             wt_filename = os.path.join(mutation_dir, "wt.txt")
             with open(wt_filename, 'w') as f:
                 f.write(wild_sequence + '\n')
-            logger.debug(f"Written wt to {wt_filename}")
+            #logger.debug(f"Written wt to {wt_filename}")
 
             
             mut_filename = os.path.join(mutation_dir, "mut.txt")
             with open(mut_filename, 'w') as f:
                 f.write(mutation + '\n')
-            logger.debug(f"Written mutation to {mut_filename}")
+            #logger.debug(f"Written mutation to {mut_filename}")
 
             
             try:
@@ -106,7 +106,7 @@ def process_mutation(key, mutation, script_directory, sequences_directory,wild_s
             if os.path.exists(rnapdist_result_path):
                 with open(rnapdist_result_path) as f:
                     rnapdist_output = f.read().strip()
-                logger.debug(f"RNApdist result read from {rnapdist_result_path}: {rnapdist_output}")
+                #logger.debug(f"RNApdist result read from {rnapdist_result_path}: {rnapdist_output}")
             else:
                 rnapdist_output = "Error: RNApdist-result.txt not found"
                 logger.error(rnapdist_output)
@@ -115,7 +115,7 @@ def process_mutation(key, mutation, script_directory, sequences_directory,wild_s
             try:
                 command = f'bash {os.path.join(script_directory, "02-RNAfold")}'
                 run_command(command, cwd=mutation_dir)
-                logger.debug("RNAfold command executed successfully")
+                #logger.debug("RNAfold command executed successfully")
             except RuntimeError as e:
                 logger.error(f"Error during RNAfold: {e}")
 
@@ -123,7 +123,7 @@ def process_mutation(key, mutation, script_directory, sequences_directory,wild_s
             try:
                 command = f'bash {os.path.join(script_directory, "03-RNAdistance")}'
                 run_command(command, cwd=mutation_dir)
-                logger.debug("RNAdistance command executed successfully")
+                #logger.debug("RNAdistance command executed successfully")
             except RuntimeError as e:
                 logger.error(f"Error during RNAdistance: {e}")
 
@@ -131,7 +131,7 @@ def process_mutation(key, mutation, script_directory, sequences_directory,wild_s
             if os.path.exists(rnadistance_result_path):
                 with open(rnadistance_result_path) as f:
                     rnadistance_output = f.read().strip().split()
-                logger.debug(f"RNAdistance result read from {rnadistance_result_path}: {rnadistance_output}")
+                #logger.debug(f"RNAdistance result read from {rnadistance_result_path}: {rnadistance_output}")
             else:
                 rnadistance_output = ["Error", "RNAdistance-result.txt not found"]
                 logger.error(rnadistance_output)

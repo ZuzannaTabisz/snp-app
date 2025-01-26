@@ -118,7 +118,7 @@ describe('PairPage', () => {
 
   test('displays error for unsupported file format', async () => {
     renderWithProviders(<PairPage />);
-    const fileInput = screen.getByLabelText(/Upload Mutant RNA Sequence File/i);
+    const fileInput = screen.getByLabelText(/Upload Mutant Sequence File/i);
     const sequence = generateRandomValidSequence(100);
     const file = new File([sequence], "sequence.pdf", { type: "application/pdf" });
 
@@ -134,26 +134,30 @@ describe('PairPage', () => {
     const dbSnpInput = screen.getByPlaceholderText(/Enter dbSNP ID/i);
     const searchButton = screen.getByText(/Search dbSNP/i);
   
-    fireEvent.change(dbSnpInput, { target: { value: 'rs12345' } });
-
-    const mockSequence = generateRandomValidSequence(100);
-    (fetch as jest.Mock).mockResolvedValueOnce({
+    fireEvent.change(dbSnpInput, { target: { value: 'rs328' } });
+  
+    const mockWildSequence = 'GGCACCTGCGGTATTTGTGAAATGCCATGACAAGTCTCTGAATAAGAAGTCAGGCTGGTGAGCATTCTGGGCTAAAGCTGACTGGGCATCCTGAGCTTGCA';
+    const mockMutantSequence = 'GGCACCTGCGGTATTTGTGAAATGCCATGACAAGTCTCTGAATAAGAAGTGAGGCTGGTGAGCATTCTGGGCTAAAGCTGACTGGGCATCCTGAGCTTGCA';
+    global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ sequence: mockSequence }),
+      json: async () => ({ wildType: mockWildSequence, mutantType: mockMutantSequence }),
     });
   
     fireEvent.click(searchButton);
   
     await waitFor(() => {
-      expect(screen.getByDisplayValue(mockSequence)).toBeInTheDocument();
+      //expect(fetchDbSnp).toBe(true);
+      expect(screen.getByDisplayValue(mockWildSequence, { exact: false })).toBeInTheDocument();
+      expect(screen.getByDisplayValue(mockMutantSequence, { exact: false })).toBeInTheDocument();
+      expect(screen.getByDisplayValue('rs328')).toBeInTheDocument();
     });
-  });
+  })
 
   test('handles example click for example 1', () => {
     renderWithProviders(<PairPage />);
-    const exampleButton = screen.getByText(/Example: ddx11-rs14330/i);
+    const exampleButton = screen.getByText(/Example: rs328/i);
     fireEvent.click(exampleButton);
-    expect(screen.getByDisplayValue(/TGGGCAACCACACCACTGCCTGGCGCCGTGCCCTTCCTTTGTCCTGCCCGCTGGAGACAGTGTTTGTCGTGGGCGTGGTCTGCGGGGATCCTGTTACAAAGGTGAAACCCAGGAGGAGAGTGTGGAGTCCAGAGTGCTGCCAGGACCCAGGCACAGGCGTTAGCTCCCGTAGGAGAAAATGCGGGAATCCTGAATGAACAGTGGGTCCTGGCTGTCCTTGGGGCGTTCCAGGGCAGCTCCCCTCCTGGAATAGAATCTTTCTTTCCATCCTGCATGGCTGAGAGCCAGGCTTCCTTCCTGGTCTCCGCAGGAGGCTGTGGCAGCTGTGGCATCCACTGTGGCATCTCCGTCCTGCCCACCTTCTTAAGAGGCGAGATGGAGCAGGCCCATCTGCCTCTGCCCTTTCTAGCCAAGGTTATAGCTGCCCTGGACTGCTCACTCTCTGGTCTCAATTTAAAATGATCCATGGCCACAGGGCTCCTGCCCAGGGGCTTGTCACCTTCCCCTCCTCCTTCCTGAGTCACTCCTTCAGTAGAAGGCCCTGCTCCCTATCCTGTCCCACAGCCCTGCCTGGATTTGTATCCTTGGCTTCGTGCCAGTTCCTCCAAGTCTATGGCACCTCCCTCCCTCTCAACCACTTGAGCAAACTCCAAGACACCTTCTACCCCAACACCAGCAATTATGCCAAGGGCCGTTAGGCTCTCAACATGACTATAGAGACCCCGTGTCATCACGGAGACCTTTGTTCCTGTGGGAAAATATCCCTCCCACCTGCAACAGCTGCCCCTGCTGACTGCGCCTGTCTTCTCCCTCTGACCCCAGAGAAAGGGGCTGTGGTCAGCTGGGATCTTCTGCCACCATCAGGGACAAACGGGGGCAGGAGGAAAGTCACTGATGCCCAGATGTTTGCATCCTGCACAGCTATAGGTCCTTAAATAAAAGTGTGCTGTTGGTTTCTGCTGA/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/GGCACCUGCGGUAUUUGUGAAAUGCCAUGACAAGUCUCUGAAUAAGAAGUCAGGCUGGUGAGCAUUCUGGGCUAAAGCUGACUGGGCAUCCUGAGCUUGCA/i)).toBeInTheDocument();
   });
 
   test('handles example click for example 2', () => {
@@ -172,7 +176,7 @@ describe('PairPage', () => {
 
   test('handles valid .fasta file upload', async () => {
     renderWithProviders(<PairPage />);
-    const fileInput = screen.getByLabelText(/Upload Mutant RNA Sequence File/i);
+    const fileInput = screen.getByLabelText(/Upload Mutant Sequence File/i);
     const sequence = generateRandomValidSequence(100);
     const file = new File([`>header\n${sequence}`], "sequence.fasta", { type: "text/plain" });
 
@@ -185,7 +189,7 @@ describe('PairPage', () => {
 
   test('handles valid .txt file upload', async () => {
     renderWithProviders(<PairPage />);
-    const fileInput = screen.getByLabelText(/Upload Mutant RNA Sequence File/i);
+    const fileInput = screen.getByLabelText(/Upload Mutant Sequence File/i);
     const sequence = generateRandomValidSequence(100);
     const file = new File([sequence], "sequence.txt", { type: "text/plain" });
 

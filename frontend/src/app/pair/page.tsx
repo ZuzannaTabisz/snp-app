@@ -8,13 +8,13 @@ import "../../styles/index.css";
 
 const PairPage = () => {
   const [analysisId] = useState(uuidv4());
-  const [mutantSequence, setMutantSequence] = useState("");
-  const [wildSequence, setWildSequence] = useState("");
-  const [dbSnpId, setDbSnpId] = useState("");
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [fetchDbSnp, setFetchDbSnp] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [mutantSequence, setMutantSequence] = useState<string>("");
+  const [wildSequence, setWildSequence] = useState<string>("");
+  const [dbSnpId, setDbSnpId] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [message, setMessage] = useState<string>("");
+  const [fetchDbSnp, setFetchDbSnp] = useState<boolean>(false);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   //const [analysisId, setAnalysisId] = useState<string>("");  
   const router = useRouter();
 
@@ -329,20 +329,29 @@ const PairPage = () => {
             <input
               type="text"
               name="wildSequence"
-              placeholder="Enter Wild-type RNA Sequence"
+              placeholder="Enter Wild-Type RNA Sequence"
               aria-label="Wild-type RNA Sequence"
               className="wild-sequence mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
               value={wildSequence}
               onChange={(e) => handleInputChange(e, setWildSequence)}
             />
           </div>
-            <input
-              type="file"
-              accept=".fasta,.txt"
-              aria-label="Upload Wild-type RNA Sequence File"
-              className="wild-sequence-file mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-              onChange={(e) => handleFileUpload(e, setWildSequence)}
-            /> 
+          <div className="file-upload mb-5">
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
+              >
+                Upload Wild-Type Sequence File
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                accept=".fasta,.txt"
+                lang="en"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e, setWildSequence)}
+              />
+          </div>
 
           <div style={{ overflow: "auto"}}>
             <input
@@ -355,14 +364,21 @@ const PairPage = () => {
               onChange={(e) => handleInputChange(e, setMutantSequence)}
             />
           </div>
-          <div style={{ overflow: "auto"}}>
-            <input
-              type="file"
-              accept=".fasta,.txt"
-              aria-label="Upload Mutant RNA Sequence File"
-              className="mutant-sequence-file mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-              onChange={(e) => handleFileUpload(e, setMutantSequence)}
-            />
+          <div className="file-upload mb-5">
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600"
+              >
+                 Upload Mutant Sequence File 
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                accept=".fasta,.txt"
+                lang="en"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e, setMutantSequence)}
+              />
           </div>
 
           
