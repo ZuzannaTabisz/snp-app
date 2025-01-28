@@ -3,7 +3,7 @@ import graphviz
 import argparse
 import os
 
-#assumptins made:
+
 # - underscores are never present after the token before the closing bracket; they are always added before a node label in vienna code
 # - nodes in string are always read in left to right order exept nodes with P in them are read first
 
@@ -46,23 +46,18 @@ def build_tree(tokens, original_string):
             current_list.append(token)
             current_list.reverse()
 
-        #print(f"Token: {token}, Stack: {stack}, Current List: {current_list}")
 
         # updating position
         position += len(token)
 
-    #print(f"Final Tree Structure: {root}")
-    #print(f"Token Positions Dictionary: {token_positions}")
     return root[0] if root else [], token_positions
 
 # function to add nodes and edges to the Graphviz graph with coloring logic
 def add_edges(graph, subtree, previous_parent, current_parent, common_positions, common_position_labels, pos_dict, key_usage_count, is_root=False):
     subtree_list = list(subtree)
-    #print(f"\nAdding edges to graph: Subtree={subtree_list}, Current Parent={current_parent}")
 
     for index, element in enumerate(subtree_list):
         if not isinstance(element, list):
-            #print(f"\nProcessing element: {element}")
 
             # check if the element is in the pos_dict
             if element in pos_dict:
@@ -73,52 +68,37 @@ def add_edges(graph, subtree, previous_parent, current_parent, common_positions,
 
                 # creating unique label
                 unique_label = f"{re.sub(r'_', '', element)}_{values[count]}"
-                #print(f"Adding node {unique_label} (Element: {re.sub(r'_', '', element)}, Value: {values[count]})")
 
                 # update the usage count for the key
                 key_usage_count[element] = count + 1
-                #print(f"Updated usage count for {element}: {key_usage_count[element]}")
                 # adding the node to the graph
 
                 if values[count] + 1  in common_positions:
                     if values[count] + 1 in common_position_labels:
                         color = "green"
                     else:
-                        #print(f'Common posit {common_positions}')
-                        #print(f'Common posit labels {common_position_labels}')
-                        #print(f'Adding orange {unique_label} (Element: {element}, Value: {values[count]}')
                         color = "orange"
                 else:
-                    color = "red"
+                    color = "orangered"
 
                 graph.node(unique_label, re.sub(r'_', '', element), color="black", fillcolor=color, style="filled", shape="ellipse")
 
                 if current_parent is not None:
                     graph.edge(current_parent, unique_label, color="black")
-                    #print(f"Edge Added from {current_parent} to {unique_label}")
 
                     previous_parent = current_parent
                     current_parent = unique_label
 
                 # if 'P' is found in the element, reverse the remaining subtree
                 if 'P' in element:
-                    #print(f"Found 'P' in {element}, reversing subtree.")
                     subtree_list[index + 1:] = reversed(subtree_list[index + 1:])
-                    #print(f"Reversed subtree list: {subtree_list[index + 1:]}")
+
         else:
             # if element is a list, process it recursively
-
-            #print(f"Processing nested list: {element}")
             add_edges(graph, element, previous_parent, current_parent, common_positions, common_position_labels, pos_dict, key_usage_count, is_root=False)
 
 
-# ============================================================================================
 
-# parser = argparse.ArgumentParser(description="Script to process RNA mutations and analyze results.")
-# parser.add_argument("path", help="Path to the directory containing sequence files.")
-# args = parser.parse_args()
-
-# sequences_directory = args.path
 
 file_path=os.path.join("RNAdistance-backtrack.txt")
 
@@ -150,15 +130,10 @@ for pos in common_positions:
 
     # finding only identical labels for coloring the node orange
     if label1 == label2:
-        #print(f"Different Labels - Position: {pos}, Original 1: {label1}, Original 2: {label2}")
         common_position_labels.append(pos)
 
 
 
-#print(f"Closing positions in tree_str1: {closing_positions1}")
-#print(f"Closing positions in tree_str2: {closing_positions2}")
-#print(f"Common closing positions: {common_positions}")
-#print(f"Common position labels: {common_position_labels}")
 
 # drawing graphs
 

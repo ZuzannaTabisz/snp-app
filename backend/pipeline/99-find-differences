@@ -11,8 +11,8 @@ if __name__ == '__main__':
         mut[0] = mut[0].strip()
         mut[-1] = mut[-1].split()[0]
 
-    annot_wt = ["0 0 1 setrgbcolor"]
-    annot_mut = ["1 0 0 setrgbcolor"]
+    annot_wt = ["0.4 0.4 1 setrgbcolor"]
+    annot_mut = ["1 0.2 0.2 setrgbcolor"]
 
     i = 0
     j = 0
@@ -57,11 +57,11 @@ if __name__ == '__main__':
             continue
 
     if min_i is not None and max_i is not None and min_i != max_i:
-        annot_wt.append(f"{min_i+1} {max_i+1} 3 0 0 1 omark")
+        annot_wt.append(f"{min_i+1} {max_i+1} 3 0.4 0.4 1 omark")
     annot_wt.append("drawbases")
 
     if min_j is not None and max_j is not None and min_j != max_j:
-        annot_mut.append(f"{min_j+1} {max_j+1} 3 1 0 0 omark")
+        annot_mut.append(f"{min_j+1} {max_j+1} 3 1 0.2 0.2 omark")
     annot_mut.append("drawbases")
 
     print(' '.join(annot_wt))

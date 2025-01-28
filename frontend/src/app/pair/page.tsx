@@ -8,26 +8,22 @@ import "../../styles/index.css";
 
 const PairPage = () => {
   const [analysisId] = useState(uuidv4());
-  const [mutantSequence, setMutantSequence] = useState("");
-  const [wildSequence, setWildSequence] = useState("");
-  const [dbSnpId, setDbSnpId] = useState("");
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [fetchDbSnp, setFetchDbSnp] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  //const [analysisId, setAnalysisId] = useState<string>("");  
+  const [mutantSequence, setMutantSequence] = useState<string>("");
+  const [wildSequence, setWildSequence] = useState<string>("");
+  const [dbSnpId, setDbSnpId] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [message, setMessage] = useState<string>("");
+  const [fetchDbSnp, setFetchDbSnp] = useState<boolean>(false);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const router = useRouter();
 
-  //const mut_sequence = searchParams.get('mut_sequence');
-  //const wt_sequence = searchParams.get('wt_sequence');
-
-  const MAX_SEQUENCE_LENGTH = 10000;
+  const MAX_SEQUENCE_LENGTH = 2000;
   const MIN_SEQUENCE_LENGTH = 10;
   const MAX_DBSNP_ID_LENGTH = 40;
 
 
   useEffect(() => {
-    const socket = io("/pair", {
+    const socket = io(`/${analysisId}`, {
       path: "/socket.io",
       transports: ["websocket"],
       autoConnect: true,
@@ -46,8 +42,6 @@ const PairPage = () => {
 
     socket.on('task_status', (data: { analysis_id: string; status: string }) => {
       console.log("WebSocket status update:", data);
-      //setAnalysisId(data.analysis_id);
-      
       setMessage(data.status);
     });
 
@@ -75,10 +69,10 @@ const PairPage = () => {
     // ddx11-rs14330
       if (example === 1) {
           setMutantSequence(
-              "TGGGCAACCACACCACTGCCTGGCGCCGTGCCCTTCCTTTGTCCTGCCCGCTGGAGACAGTGTTTGTCGTGGGCGTGGTCTGCGGGGATCCTGTTACAAAGGTGAAACCCAGGAGGAGAGTGTGGAGTCCAGAGTGCTGCCAGGACCCAGGCACAGGCGTTAGCTCCCGTAGGAGAAAATGCGGGAATCCTGAATGAACAGTGGGTCCTGGCTGTCCTTGGGGCGTTCCAGGGCAGCTCCCCTCCTGGAATAGAATCTTTCTTTCCATCCTGCATGGCTGAGAGCCAGGCTTCCTTCCTGGTCTCCGCAGGAGGCTGTGGCAGCTGTGGCATCCACTGTGGCATCTCCGTCCTGCCCACCTTCTTAAGAGGCGAGATGGAGCAGGCCCATCTGCCTCTGCCCTTTCTAGCCAAGGTTATAGCTGCCCTGGACTGCTCACTCTCTGGTCTCAATTTAAAATGATCCATGGCCACAGGGCTCCTGCCCAGGGGCTTGTCACCTTCCCCTCCTCCTTCCTGAGTCACTCCTTCAGTAGAAGGCCCTGCTCCCTATCCTGTCCCACAGCCCTGCCTGGATTTGTATCCTTGGCTTCGTGCCAGTTCCTCCAAGTCTATGGCACCTCCCTCCCTCTCAACCACTTGAGCAAACTCCAAGACACCTTCTACCCCAACACCAGCAATTATGCCAAGGGCCGTTAGGCTCTCAACATGACTATAGAGACCCCGTGTCATCACGGAGACCTTTGTTCCTGTGGGAAAATATCCCTCCCACCTGCAACAGCTGCCCCTGCTGACTGCGCCTGTCTTCTCCCTCTGACCCCAGAGAAAGGGGCTGTGGTCAGCTGGGATCTTCTGCCACCATCAGGGACAAACGGGGGCAGGAGGAAAGTCACTGATGCCCAGATGTTTGCATCCTGCACAGCTATAGGTCCTTAAATAAAAGTGTGCTGTTGGTTTCTGCTGA"
+              "GGCACCUGCGGUAUUUGUGAAAUGCCAUGACAAGUCUCUGAAUAAGAAGUGAGGCUGGUGAGCAUUCUGGGCUAAAGCUGACUGGGCAUCCUGAGCUUGCA"
           );
           setWildSequence(
-              "TGGGCAACCACACCACTGCCTGGCGCCGTGCCCTTCCTTTGTCCTGCCCGCTGGAGACAGTGTTTGTCGTGGGCGTGGTCTGCGGGGATCCTGTTACAAAGGTGAAACCCAGGAGGAGAGTGTGGAGTCCAGAGTGCTGCCAGGACCCAGGCACAGGCGTTAGCTCCCGTAGGAGAAAATGGGGGAATCCTGAATGAACAGTGGGTCCTGGCTGTCCTTGGGGCGTTCCAGGGCAGCTCCCCTCCTGGAATAGAATCTTTCTTTCCATCCTGCATGGCTGAGAGCCAGGCTTCCTTCCTGGTCTCCGCAGGAGGCTGTGGCAGCTGTGGCATCCACTGTGGCATCTCCGTCCTGCCCACCTTCTTAAGAGGCGAGATGGAGCAGGCCCATCTGCCTCTGCCCTTTCTAGCCAAGGTTATAGCTGCCCTGGACTGCTCACTCTCTGGTCTCAATTTAAAATGATCCATGGCCACAGGGCTCCTGCCCAGGGGCTTGTCACCTTCCCCTCCTCCTTCCTGAGTCACTCCTTCAGTAGAAGGCCCTGCTCCCTATCCTGTCCCACAGCCCTGCCTGGATTTGTATCCTTGGCTTCGTGCCAGTTCCTCCAAGTCTATGGCACCTCCCTCCCTCTCAACCACTTGAGCAAACTCCAAGACACCTTCTACCCCAACACCAGCAATTATGCCAAGGGCCGTTAGGCTCTCAACATGACTATAGAGACCCCGTGTCATCACGGAGACCTTTGTTCCTGTGGGAAAATATCCCTCCCACCTGCAACAGCTGCCCCTGCTGACTGCGCCTGTCTTCTCCCTCTGACCCCAGAGAAAGGGGCTGTGGTCAGCTGGGATCTTCTGCCACCATCAGGGACAAACGGGGGCAGGAGGAAAGTCACTGATGCCCAGATGTTTGCATCCTGCACAGCTATAGGTCCTTAAATAAAAGTGTGCTGTTGGTTTCTGCTGA"
+              "GGCACCUGCGGUAUUUGUGAAAUGCCAUGACAAGUCUCUGAAUAAGAAGUCAGGCUGGUGAGCAUUCUGGGCUAAAGCUGACUGGGCAUCCUGAGCUUGCA"
           );
     // vegfa-5utr
       } else if (example === 2) {
@@ -232,7 +226,6 @@ const PairPage = () => {
     e.preventDefault();
     setError("");
     setIsSubmitted(true);
-    //setAnalysisId(newAnalysisId);
     console.log("Generated UUID:", analysisId);
     
   
@@ -277,6 +270,7 @@ const PairPage = () => {
     }
   
     try {
+      setMessage("Analysis submitted");
       console.log("Generated UUID in try:", analysisId);
       if (!analysisId) throw new Error("Failed to start analysis (id).");
       const response = await fetch("/api/analyze/pair", {
@@ -290,12 +284,7 @@ const PairPage = () => {
       if (!response.ok) throw new Error("Failed to start analysis");
   
       const responseData = await response.json();
-      //setAnalysisId(responseData.analysis_id);
-      const query = new URLSearchParams({
-        mut_sequence: mutantSequence,
-        wt_sequence: wildSequence,
-      }).toString();
-      router.push(`/pair/${responseData.analysis_id}?${query}`);
+      router.push(`/pair/${responseData.analysis_id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
       setIsSubmitted(false);
@@ -306,83 +295,105 @@ const PairPage = () => {
   const { theme } = useTheme();
 
   return (
-    <div className="relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-800 dark:text-white sm:p-11 lg:p-8 xl:p-11">
+    <div className="relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-dark dark:text-white sm:p-11 lg:p-8 xl:p-11">
       <h3 className="mb-4 text-2xl font-bold leading-tight mt-24">
         RNA Sequence Analysis
       </h3>
       {message && (
-        <p className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400 whitespace-pre-wrap break-words">
+        <p className="message mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400 whitespace-pre-wrap break-words">
           {message}
         </p>
       )}
       {error && (
-        <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
+        <p data-testid="error-message" className="error mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
           {error}
         </p>
       )}
-  
+
       {!isSubmitted ? (
         <>
           <p className="mb-11 border-b pb-11 text-base leading-relaxed border-gray-200 dark:border-gray-600">
             Please enter your RNA sequence for analysis.
           </p>
+
+
+          <div style={{ overflow: "auto"}}>
+            <input
+              type="text"
+              name="wildSequence"
+              placeholder="Enter Wild-Type RNA Sequence"
+              aria-label="Wild-type RNA Sequence"
+              className="wild-sequence mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+              value={wildSequence}
+              onChange={(e) => handleInputChange(e, setWildSequence)}
+            />
+          </div>
+          <div className="file-upload mb-5">
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer bg-gray-300 text-black py-2 px-6 rounded-lg shadow-submit duration-300 hover:bg-gray-400 dark:bg-gray-400 dark:hover:bg-gray-500"
+              >
+                Upload Wild-Type Sequence File
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                accept=".fasta,.txt"
+                lang="en"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e, setWildSequence)}
+              />
+          </div>
+
           <div style={{ overflow: "auto"}}>
             <input
               type="text"
               name="mutantSequence"
               placeholder="Enter Mutant RNA Sequence"
               aria-label="Mutant RNA Sequence"
-              className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+              className="mutant-sequence mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
               value={mutantSequence}
               onChange={(e) => handleInputChange(e, setMutantSequence)}
             />
           </div>
-          <div style={{ overflow: "auto"}}>
-            <input
-              type="file"
-              accept=".fasta,.txt"
-              aria-label="Upload Mutant RNA Sequence File"
-              className="mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-              onChange={(e) => handleFileUpload(e, setMutantSequence)}
-            />
+          <div className="file-upload mb-5">
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer bg-gray-300 text-black py-2 px-6 rounded-lg shadow-submit duration-300 hover:bg-gray-400 dark:bg-gray-400 dark:hover:bg-gray-500"
+              >
+                 Upload Mutant Sequence File 
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                accept=".fasta,.txt"
+                lang="en"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e, setMutantSequence)}
+              />
           </div>
-  
-          <input
-            type="text"
-            name="wildSequence"
-            placeholder="Enter Wild-type RNA Sequence"
-            aria-label="Wild-type RNA Sequence"
-            className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-            value={wildSequence}
-            onChange={(e) => handleInputChange(e, setWildSequence)}
-          />
-          <input
-            type="file"
-            accept=".fasta,.txt"
-            aria-label="Upload Wild-type RNA Sequence File"
-            className="mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-            onChange={(e) => handleFileUpload(e, setWildSequence)}
-          />
+
+          
           <div className="flex space-x-4">
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-orange-500 hover:bg-orange-600 dark:bg-orange-700 dark:shadow-submit-dark"
+              className="example-1 mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-orange-500 hover:bg-orange-600 dark:bg-orange-700 dark:shadow-submit-dark"
               onClick={() => handleExampleClick(1)}
             >
-              Example: ddx11-rs14330
+              Example: rs328
             </button>
-  
+
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-pink-500 hover:bg-pink-600 dark:bg-pink-700 dark:shadow-submit-dark"
+              className="example-2 mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-pink-500 hover:bg-pink-600 dark:bg-pink-700 dark:shadow-submit-dark"
               onClick={() => handleExampleClick(2)}
             >
               Example: vegfa-5utr
             </button>
-  
+
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-purple-500 hover:bg-purple-600 dark:bg-purple-700 dark:shadow-submit-dark"
+              className="example-3 mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-purple-500 hover:bg-purple-600 dark:bg-purple-700 dark:shadow-submit-dark"
               onClick={() => handleExampleClick(3)}
             >
               Example: rs98765
@@ -393,15 +404,15 @@ const PairPage = () => {
             name="dbSnpId"
             placeholder="Enter dbSNP ID"
             aria-label="dbSNP ID"
-            className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+            className="dbsnp-id mb-2 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
             value={dbSnpId}
             onChange={(e) => handleDbSnpIdChange(e, setDbSnpId)}
             maxLength={41}
           />
-          <div className="flex flex-col space-y-4">
+          <div className="dbsnp-upload mb-5">
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-green-500 hover:bg-green-600 dark:bg-green-700 dark:shadow-submit-dark"
+              className="cursor-pointer bg-gray-300 text-black py-2 px-6 rounded-lg shadow-submit duration-300 hover:bg-gray-400 dark:bg-gray-400 dark:hover:bg-gray-500"
               onClick={handleDbSnpSearch}
             >
               Search dbSNP
@@ -409,7 +420,7 @@ const PairPage = () => {
           </div>
           <button
             type="submit"
-            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:shadow-submit-dark"
+            className="submit mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 bg-primary hover:bg-primary-dark dark:bg-primary-dark dark:shadow-submit-dark"
             onClick={handleSubmit}
           >
             Submit
@@ -418,7 +429,7 @@ const PairPage = () => {
       ) : (
         <div className="flex flex-col items-center justify-center h-full">
           <div className="loader mb-4"></div>
-          <p className="text-lg font-medium text-center">
+          <p className="text-lg font-medium text-center mb-4">
             Your request is being processed. Please wait.
           </p>
         </div>

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, send_file
 import logging
 import os
 import uuid
@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 def extract_mut_or_wt_tree_svg_from_database(analysis_id, filename):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({f"error while connecting to databse (table tree_result)\n"}), 500
+        return ({f"error while connecting to databse (table tree_result)\n"}), 500
     result = ""
     cursor = conn.cursor()
     if filename == 'tree_mut.svg':
@@ -31,7 +31,7 @@ def extract_mut_or_wt_tree_svg_from_database(analysis_id, filename):
             tree_mut_url = result[0]
             return tree_mut_url
         else:
-            return jsonify("No tree_mut.svg found for the given analysis_id."),404
+            return ("No tree_mut.svg found for the given analysis_id."),404
     elif filename == 'tree_wt.svg':
         cursor.execute("""
                 SELECT tree_wt_url 
@@ -46,13 +46,13 @@ def extract_mut_or_wt_tree_svg_from_database(analysis_id, filename):
             tree_wt_url = result[0]
             return tree_wt_url
         else:
-            return jsonify("No tree_wt.svg found for the given analysis_id."),404
-    else: return jsonify("No tree.svg found for the given analysis_id."), 404
+            return ("No tree_wt.svg found for the given analysis_id."),404
+    else: return ("No tree.svg found for the given analysis_id."), 404
 
 def extract_mut_or_wt_dotbracket_svg_from_database(analysis_id, filename):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({f"error while connecting to databse (table rna_plot_result)\n"}), 500
+        return ({f"error while connecting to databse (table rna_plot_result)\n"}), 500
     result = ""
     cursor = conn.cursor()
     if filename == 'mut-dotbracket.svg':
@@ -69,7 +69,7 @@ def extract_mut_or_wt_dotbracket_svg_from_database(analysis_id, filename):
             mutant_url = result[0]
             return mutant_url
         else:
-            return jsonify("No mut-dotbracket.svg found for the given analysis_id."), 404
+            return ("No mut-dotbracket.svg found for the given analysis_id."), 404
     elif filename == 'wt-dotbracket.svg':
         cursor.execute("""
                 SELECT wild_type_url 
@@ -84,13 +84,13 @@ def extract_mut_or_wt_dotbracket_svg_from_database(analysis_id, filename):
             wild_type_url = result[0]
             return wild_type_url
         else:
-            return jsonify("No wt-dotbracket.svg found for the given analysis_id."), 404
-    else: return jsonify("No dotbracket.svg found for the given analysis_id."), 404
+            return ("No wt-dotbracket.svg found for the given analysis_id."), 404
+    else: return ("No dotbracket.svg found for the given analysis_id."), 404
 
 def read_from_table_rna_fold_result(analysis_id):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({f"error while connecting to databse (files: mut-dotbarcket.txt wt_dotbracket.txt)\n"}), 500
+        return ({f"error while connecting to databse (files: mut-dotbarcket.txt wt_dotbracket.txt)\n"}), 500
     try: 
         cursor = conn.cursor()
         cursor.execute("SELECT wild_type_energy, mutant_energy FROM rna_fold_result WHERE task_id = %s", (analysis_id,))
@@ -101,18 +101,20 @@ def read_from_table_rna_fold_result(analysis_id):
 
         if result:
             wild_type_energy, mutant_energy = result
-            return (f"\nmut_dotbracket.txt:\nMutant sequence energy: {mutant_energy}\n"
-                    f"\nwt_dotbracket.txt:\nWild-Type sequence energy: {wild_type_energy}"), 200
+            return({
+                'mutant_energy': mutant_energy,
+                'wild_type_energy': wild_type_energy
+            }), 200
         else:
-            return jsonify("files: mut-dotbarcket.txt wt_dotbracket.txt not found"), 404
+            return ("files: mut-dotbarcket.txt wt_dotbracket.txt not found"), 404
     
     except Exception as e:
-        return jsonify({f"Error while fetching data: {e}"}), 500
+        return ({f"Error while fetching data: {e}"}), 500
 
 def read_from_table_rna_pdist_result(analysis_id):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({f"error while connecting to databse (file RNApdist_result.txt)\n"}), 500
+        return ({f"error while connecting to databse (file RNApdist_result.txt)\n"}), 500
     cursor = conn.cursor()
     cursor.execute("SELECT distance FROM rna_pdist_result WHERE task_id = %s", (analysis_id,))
     result = cursor.fetchone()
@@ -122,14 +124,14 @@ def read_from_table_rna_pdist_result(analysis_id):
 
     if result:
         distance = result[0]
-        return (f"RNApdist_result.txt:\n{distance}\n"), 201
+        return (distance), 201
     else:
-        return jsonify("file RNApdist_result.txt not found\n"), 404
+        return ("file RNApdist_result.txt not found\n"), 404
 
 def read_from_table_rna_distance_result(analysis_id):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({f"error while connecting to databse (file RNAdistance-result.txt and RNAdistance-backtrack.txt )\n"}), 500
+        return ({f"error while connecting to databse (file RNAdistance-result.txt and RNAdistance-backtrack.txt )\n"}), 500
     cursor = conn.cursor()
     cursor.execute("""
         SELECT 
@@ -148,13 +150,23 @@ def read_from_table_rna_distance_result(analysis_id):
         distance_big_c, distance_big_p, backtrack_data) = result
 
 
-        formatted_result = (
-        f"\n\nRNAdistance_result.txt:\nf: {distance_f}  h: {distance_h}  w: {distance_w}  c: {distance_c}\n"
-        f"F: {distance_big_f}  H: {distance_big_h}  W: {distance_big_w}  C: {distance_big_c}  P: {distance_big_p}\n"
-        f"\n\nRNAdistance_backtrack.txt:{backtrack_data}"),201
+        result = {
+        "RNAdistance_result": {
+            "f": distance_f,
+            "h": distance_h,
+            "w": distance_w,
+            "c": distance_c,
+            "F": distance_big_f,
+            "H": distance_big_h,
+            "W": distance_big_w,
+            "C": distance_big_c,
+            "P": distance_big_p
+        },
+        "RNAdistance_backtrack": backtrack_data
+        }
 
 
-        return formatted_result
+        return (result), 201
     else:
         return ({f"file RNAdistance-result.txt and RNAdistance-backtrack.txt not found\n"}),404
 
@@ -162,15 +174,15 @@ def save_to_table_tree_result(analysis_id, file_path, scenerio):
     id = str(uuid.uuid4())
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
-    logger.debug(file_path)
+
     if scenerio == 1:
         cursor.execute(
             "INSERT INTO tree_result (id, task_id, tree_wt_url, tree_mut_url, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
             (id, analysis_id, 'empty', file_path, 'in_progress')
         )
-        logger.debug(f"INSERT INTO tree_result (id, task_id, tree_wt_url, tree_mut_url, created_at, processing_status) VALUES ({id}, {analysis_id}, 'empty', {file_path}, NOW(), 'in_progress')")
+
     if scenerio == 2:
         cursor.execute(
         "SELECT COUNT(*) FROM tree_result WHERE task_id = %s",
@@ -211,13 +223,13 @@ def save_to_table_tree_result(analysis_id, file_path, scenerio):
     cursor.close()
     conn.close()
 
-    return jsonify({"message": "Result added successfully!"}), 201
+    return ({"message": "Result added successfully!"}), 201
 
 def save_to_table_rna_plot_result(analysis_id, file_path, scenerio):
     id = str(uuid.uuid4())
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
 
     if scenerio == 1:
@@ -225,7 +237,7 @@ def save_to_table_rna_plot_result(analysis_id, file_path, scenerio):
             "INSERT INTO rna_plot_result (id, task_id, wild_type_url, mutant_url, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
             (id, analysis_id, 'empty', file_path, 'in_progress')
         )
-        logger.debug(f"INSERT INTO rna_plot_result (id, task_id, wild_type_url, mutant_url, created_at, processing_status) VALUES ({id}, {analysis_id}, 'empty', {file_path}, NOW(), 'in_progress')")
+
     if scenerio == 2:
         cursor.execute(
         "SELECT COUNT(*) FROM rna_plot_result WHERE task_id = %s",
@@ -266,16 +278,15 @@ def save_to_table_rna_plot_result(analysis_id, file_path, scenerio):
     cursor.close()
     conn.close()
 
-    return jsonify({"message": "Result added successfully!"}), 201
+    return ({"message": "Result added successfully!"}), 201
 
 def save_to_table_rna_fold_result(analysis_id, wild_type_dot_bracket, mutant_dot_bracket, wild_type_energy, mutant_energy, processing_status, scenerio):
     id = str(uuid.uuid4())
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
     
-    logger.debug(f"INSERT INTO rna_fold_result (id, task_id, wild_type_dot_bracket, mutant_dot_bracket, wild_type_energy, mutant_energy, created_at, processing_status) VALUES ({id}, {analysis_id}, {wild_type_dot_bracket}, {mutant_dot_bracket}, {wild_type_energy}, {mutant_energy}, {processing_status})")
 
     if scenerio == 1:
         cursor.execute(
@@ -325,13 +336,13 @@ def save_to_table_rna_fold_result(analysis_id, wild_type_dot_bracket, mutant_dot
     cursor.close()
     conn.close()
 
-    return jsonify({"message": "Result added successfully!"}), 201
+    return ({"message": "Result added successfully!"}), 201
 
 def save_to_table_rna_distance_result(analysis_id, params, backtrack_data, processing_status):
     id = str(uuid.uuid4())
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     
     cursor = conn.cursor()
 
@@ -367,14 +378,14 @@ def save_to_table_rna_distance_result(analysis_id, params, backtrack_data, proce
     conn.commit()
     cursor.close()
     conn.close()
-    return jsonify({"message": "Result added successfully!"}), 201
+    return ({"message": "Result added successfully!"}), 201
 
 
 def save_to_table_rna_pdist_result(analysis_id, distance, processing_status):
     id = str(uuid.uuid4())
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO rna_pdist_result (id, task_id, distance, created_at, processing_status) VALUES (%s, %s, %s, NOW(), %s)",
@@ -384,13 +395,13 @@ def save_to_table_rna_pdist_result(analysis_id, distance, processing_status):
     cursor.close()
     conn.close()
 
-    return jsonify({"message": "Result added successfully!"}), 201
+    return ({"message": "Result added successfully!"}), 201
 
 
 def update_table_top_10(analysis_id, mutant_sequence, rank_snp, processing_status):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
     cursor.execute(
     """
@@ -411,12 +422,12 @@ def update_table_top_10(analysis_id, mutant_sequence, rank_snp, processing_statu
     cursor.close()
     conn.close()
 
-    return jsonify({"message": "Status update successfully!"}), 201
+    return ({"message": "Status update successfully!"}), 201
 
 def save_to_table_top_10(id, analysis_id, mutated_sequence, rank, processing_status):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO top_10 (id, wild_type_seq_id, mutant_sequence, rank_snp, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
@@ -426,12 +437,12 @@ def save_to_table_top_10(id, analysis_id, mutated_sequence, rank, processing_sta
     cursor.close()
     conn.close()
 
-    return jsonify({"message": "Result added successfully!"}), 201
+    return ({"message": "Result added successfully!"}), 201
 
 def update_table_pair(analysis_id, processing_status):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
     if processing_status != 'completed':
         cursor.execute(
@@ -482,12 +493,12 @@ def update_table_pair(analysis_id, processing_status):
     cursor.close()
     conn.close()
 
-    return jsonify({"message": "Status update successfully!"}), 201
+    return ({"message": "Status update successfully!"}), 201
 
 def read_sequences_from_database_pair(analysis_id):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     
     cursor = conn.cursor()
     cursor.execute("""
@@ -508,12 +519,12 @@ def read_sequences_from_database_pair(analysis_id):
             "mutant_sequence": mutant_sequence
         }), 201
     else:
-        return jsonify({"error": "No sequences found for the given analysis_id"}), 404
+        return ({"error": "No sequences found for the given analysis_id"}), 404
 
 def save_to_table_pair(analysis_id, wild_sequence, mutant_sequence, processing_status):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO pair (id, wild_type_sequence, mutant_sequence, created_at, processing_status) VALUES (%s, %s, %s, NOW(), %s)",
@@ -523,12 +534,12 @@ def save_to_table_pair(analysis_id, wild_sequence, mutant_sequence, processing_s
     cursor.close()
     conn.close()
 
-    return jsonify({"message": "Result added successfully!"}), 201
+    return ({"message": "Result added successfully!"}), 201
 
 def update_table_single(analysis_id, processing_status):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
     cursor.execute(
             """
@@ -542,12 +553,12 @@ def update_table_single(analysis_id, processing_status):
     cursor.close()
     conn.close()
 
-    return jsonify({"message": "Status update successfully!"}), 201
+    return ({"message": "Status update successfully!"}), 201
 
 def save_to_table_single(analysis_id, wild_sequence, processing_status):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO single (id, wild_type_sequence, created_at, processing_status) VALUES (%s, %s, NOW(), %s)",
@@ -557,10 +568,11 @@ def save_to_table_single(analysis_id, wild_sequence, processing_status):
     cursor.close()
     conn.close()
 
-    return jsonify({"message": "Result added successfully!"}), 201
+    return ({"message": "Result added successfully!"}), 201
 
 # Konfiguracja połączenia z bazą danych
 db_config = {
+    'host': os.getenv('MYSQL_HOST', 'http://localhost:8081'),
     'host': os.getenv('MYSQL_HOST', 'mysql'),
     'user': os.getenv('MYSQL_USER', 'root'),
     'password': os.getenv('MYSQL_PASSWORD', 'qwas'),
@@ -578,7 +590,7 @@ def connect_to_database():
 def read_sequence_from_database_single(analysis_id):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     
     cursor = conn.cursor()
     cursor.execute("""
@@ -598,12 +610,12 @@ def read_sequence_from_database_single(analysis_id):
             "wild_type_sequence": wild_type_sequence
         }),201
     else:
-        return jsonify({"error": "No wild type sequence found for the given analysis ID"}), 404
+        return ({"error": "No wild type sequence found for the given analysis ID"}), 404
 
 def read_sequences_from_database_top_10(analysis_id):
     conn = connect_to_database()
     if conn is None:
-        return jsonify({"error": "Failed to connect to the database"}), 500
+        return ({"error": "Failed to connect to the database"}), 500
     
     cursor = conn.cursor()
     cursor.execute("""
@@ -626,4 +638,4 @@ def read_sequences_from_database_top_10(analysis_id):
             "mutant_sequences": mutant_sequences
         }), 201
     else:
-        return jsonify({"error": "No sequences found for the given analysis ID"}), 404
+        return ({"error": "No sequences found for the given analysis ID"}), 404

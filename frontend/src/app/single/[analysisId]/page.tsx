@@ -6,7 +6,7 @@ import { useTheme } from "next-themes";
 
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from "next/navigation";
-
+import "../../../styles/index.css";
 
 interface TaskStatus {
   analysis_id: string;
@@ -34,7 +34,7 @@ interface ApiResponse {
 
 const AnalysisResults = () => {
   const { analysisId } = useParams();
-  //router params
+  //router parameters
   const searchParams = useSearchParams();
   const router = useRouter();
   const wt_sequence = searchParams.get('wt_sequence');
@@ -51,19 +51,15 @@ const AnalysisResults = () => {
 
   const { theme } = useTheme();
 
-
-
-
   useEffect(() => {
         setWildSequence(wt_sequence);
-        //setMessage("Analysis started");
     }, [analysisId,wt_sequence]);
 
   const fetchResults = useCallback(async () => {
     try {
       console.log("Fetching results");
       const response = await fetch(`/api/results/single/${analysisId}`);
-      if (!response.ok) throw new Error("Failed to fetch combined text");
+      if (!response.ok) throw new Error("Failed to fetch results");
 
       const data: ApiResponse = await response.json();
       console.log("Fetched results:", data);
@@ -123,7 +119,7 @@ const AnalysisResults = () => {
     };
 
     return (
-      <div className="relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-800 dark:text-white sm:p-11 lg:p-8 xl:p-11">
+      <div className="relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-dark dark:text-white sm:p-11 lg:p-8 xl:p-11">
         <h1 className="mb-4 text-2xl font-bold leading-tight mt-24">
           Analysis Results
         </h1>
@@ -132,6 +128,7 @@ const AnalysisResults = () => {
         {error && (
         <p
           className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words"
+          data-testid="error-message"
         >
           {error}
         </p>
@@ -140,7 +137,7 @@ const AnalysisResults = () => {
         <div className="mb-6 rounded-sm p-6 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
           <h3 className="text-xl font-semibold dark:text-white">Submitted Sequence:</h3>
           
-          <div className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-800 dark:text-white overflow-x-auto">
+          <div className="mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-dark dark:text-white overflow-x-auto">
             <p className="whitespace-nowrap">
               {wildSequence || "N/A"}
             </p>
@@ -152,19 +149,19 @@ const AnalysisResults = () => {
             <table className="min-w-full table-auto border-collapse">
               <thead>
                 <tr>
-                  <th className="border p-2 bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300">No</th>
-                  <th className="border p-2 bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300">Mutation</th>
-                  <th className="border p-2 bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+                  <th className="border p-2 bg-gray-200 text-gray-800 dark:bg-gray-dark dark:text-gray-300">No</th>
+                  <th className="border p-2 bg-gray-200 text-gray-800 dark:bg-gray-dark dark:text-gray-300">Mutation</th>
+                  <th className="border p-2 bg-gray-200 text-gray-800 dark:bg-gray-dark dark:text-gray-300">
                     <button onClick={() => handleSort("RNApdist")}>
                       RNApdist {sortConfig.key === "RNApdist" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "■"}
                     </button>
                   </th>
-                  <th className="border p-2 bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+                  <th className="border p-2 bg-gray-200 text-gray-800 dark:bg-gray-dark dark:text-gray-300">
                     <button onClick={() => handleSort("RNAdistance(f)")}>
                       RNAdistance(f) {sortConfig.key === "RNAdistance(f)" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "■"}
                     </button>
                   </th>
-                  <th className="border p-2 bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+                  <th className="border p-2 bg-gray-200 text-gray-800 dark:bg-gray-dark dark:text-gray-300">
                     <button onClick={() => handleSort("Z-score")}>
                       Z-score {sortConfig.key === "Z-score" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "■"}
                     </button>

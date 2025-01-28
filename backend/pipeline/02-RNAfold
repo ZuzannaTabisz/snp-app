@@ -1,4 +1,4 @@
 #! /bin/bash
 
-RNAfold < wt.txt > wt-dotbracket.txt
-RNAfold < mut.txt > mut-dotbracket.txt
+RNAfold --pfScale 15.0  < wt.txt > wt-dotbracket.txt
+RNAfold --pfScale 15.0 < mut.txt > mut-dotbracket.txt

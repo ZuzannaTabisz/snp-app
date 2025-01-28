@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import io from "socket.io-client";
 import { v4 as uuidv4 } from "uuid";
+import "../../styles/index.css";
 
 
 const SinglePage = () => {
@@ -13,7 +14,6 @@ const SinglePage = () => {
   const [error, setError] = useState("");
   const [fetchDbSnp, setFetchDbSnp] = useState(false);
   const [message, setMessage] = useState<string>("");
-  //const [analysisId, setAnalysisId] = useState<string>("");  
   const [progress, setProgress] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const router = useRouter();
@@ -23,9 +23,10 @@ const SinglePage = () => {
   const MAX_DBSNP_ID_LENGTH = 40;
 
   useEffect(() => {
-    const socket = io("/single", {
-      path: "/socket.io",
+    const socket = io(`/${analysisId}`, {
+
       transports: ["websocket"],
+      path: "/socket.io",
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 5,
@@ -199,7 +200,10 @@ const SinglePage = () => {
       if (!response.ok) throw new Error("Failed to fetch sequence for dbSNP ID.");
 
       const data = await response.json();
-      setWildSequence(data.wildType);
+      console.log("dbSNP data:", data);
+      setWildSequence(data.wildType.slice(0, -1));
+      
+
       setFetchDbSnp(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
@@ -210,9 +214,8 @@ const SinglePage = () => {
     e.preventDefault();
     setError("");
     setIsSubmitted(true);
-    //setAnalysisId(newAnalysisId);
     console.log("Generated UUID:", analysisId);
-    if (!wildSequence || fetchDbSnp) {
+    if (!(wildSequence || fetchDbSnp)) {
       setError("Please provide a wild-type sequence.");
       setIsSubmitted(false);
       return;
@@ -233,6 +236,7 @@ const SinglePage = () => {
 
 
     try {
+      setMessage("Analysis submitted");
       if (!analysisId) throw new Error("Failed to start analysis (id).");
       const response = await fetch("/api/analyze/single", {
         method: "POST",
@@ -245,12 +249,7 @@ const SinglePage = () => {
       if (!response.ok) throw new Error("Failed to start analysis.");
 
       const responseData = await response.json();
-      //setAnalysisId(responseData.analysis_id);
-      const query = new URLSearchParams({
-        wt_sequence: wildSequence,
-        mutant_sequences: JSON.stringify(responseData.mutant_sequences),
-      }).toString();
-      router.push(`/single/${responseData.analysis_id}?${query}`);
+      router.push(`/single/${responseData.analysis_id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
       setIsSubmitted(false);
@@ -260,17 +259,17 @@ const SinglePage = () => {
   const { theme } = useTheme();
 
   return (
-    <div className="relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-800 dark:text-white sm:p-11 lg:p-8 xl:p-11">
+    <div className="relative z-10 rounded-sm p-8 shadow-three bg-white text-black dark:bg-gray-dark dark:text-white sm:p-11 lg:p-8 xl:p-11">
       <h3 className="mb-4 text-2xl font-bold leading-tight mt-24">
         RNA Sequence Analysis
       </h3>
       {message && (
-        <p className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400 whitespace-pre-wrap break-words">
+        <p data-testid="message" className="mb-4 text-center text-lg font-medium text-green-600 dark:text-green-400 whitespace-pre-wrap break-words">
           {message}
         </p>
       )}
       {error && (
-        <p className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
+        <p data-testid="error-message" className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
           {error}
         </p>
       )}
@@ -284,38 +283,47 @@ const SinglePage = () => {
             <input
               type="text"
               name="wildSequence"
-              placeholder="Enter Wild-type RNA Sequence"
+              placeholder="Enter Wild-Type RNA Sequence"
               aria-label="Wild-type RNA Sequence"
-              className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+              className="wild-sequence mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
               value={wildSequence}
               onChange={(e) => handleInputChange(e, setWildSequence)}
             />
           </div>
-          <input
-            type="file"
-            accept=".fasta,.txt"
-            aria-label="Upload RNA Sequence File"
-            className="mb-4 w-full text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
-            onChange={(e) => handleFileUpload(e, setWildSequence)}
-          />
+          <div className="file-upload mb-5">
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer bg-gray-300 text-black py-2 px-6 rounded-lg shadow-submit duration-300 hover:bg-gray-400 dark:bg-gray-400 dark:hover:bg-gray-500"
+              >
+                Upload Wild-Type Sequence File
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                accept=".fasta,.txt"
+                lang="en"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e, setWildSequence)}
+              />
+          </div>
           <div className="flex space-x-4">
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-orange-500 hover:bg-orange-600 dark:bg-orange-700 dark:shadow-submit-dark"
+              className="example-1 mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-orange-500 hover:bg-orange-600 dark:bg-orange-700 dark:shadow-submit-dark"
               onClick={() => handleExampleClick(1)}
             >
               Example: rs12345
             </button>
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-pink-500 hover:bg-pink-600 dark:bg-pink-700 dark:shadow-submit-dark"
+              className="example-2 mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-pink-500 hover:bg-pink-600 dark:bg-pink-700 dark:shadow-submit-dark"
               onClick={() => handleExampleClick(2)}
             >
               Example: rs67890
             </button>
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-purple-500 hover:bg-purple-600 dark:bg-purple-700 dark:shadow-submit-dark"
+              className="example-3 mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-purple-500 hover:bg-purple-600 dark:bg-purple-700 dark:shadow-submit-dark"
               onClick={() => handleExampleClick(3)}
             >
               Example: rs98765
@@ -326,15 +334,15 @@ const SinglePage = () => {
             name="dbSnpId"
             placeholder="Enter dbSNP ID"
             aria-label="dbSNP ID"
-            className="mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+            className="dbsnp-id mb-2 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
             value={dbSnpId}
             onChange={(e) => handleDbSnpIdChange(e, setDbSnpId)}
             maxLength={41}
           />
-          <div className="flex flex-col space-y-4">
+          <div className="dbsnp-upload mb-5">
             <button
               type="button"
-              className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-green-500 hover:bg-green-600 dark:bg-green-700 dark:shadow-submit-dark"
+              className="cursor-pointer bg-gray-300 text-black py-2 px-6 rounded-lg shadow-submit duration-300 hover:bg-gray-400 dark:bg-gray-400 dark:hover:bg-gray-500"
               onClick={handleDbSnpSearch}
             >
               Search dbSNP
@@ -342,14 +350,13 @@ const SinglePage = () => {
           </div>
           <button
             type="submit"
-            className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:shadow-submit-dark"
+            className="submit mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 bg-primary hover:bg-primary-dark dark:bg-primary-dark dark:shadow-submit-dark"
             onClick={handleSubmit}
           >
             Submit
           </button>
         </>
       ) : (
-
         <>
           <div className="relative mb-6 h-4 rounded-full bg-gray-200 dark:bg-gray-700">
             <div
@@ -357,19 +364,17 @@ const SinglePage = () => {
               style={{ width: `${progress}%` }}
             ></div>
           </div>
-          <p className="text-sm text-center">
+          <p className="text-sm text-center mb-4">
             {progress}% Completed
           </p>
           <div className="flex flex-col items-center justify-center h-full">
             <div className="loader mb-4"></div>
-            <p className="text-lg font-medium text-center">
+            <p className="text-lg font-medium text-center mb-4">
               Your request is being processed. Please wait.
             </p>
           </div>
         </>
       )}
-  
-      
     </div>
   );
 };
