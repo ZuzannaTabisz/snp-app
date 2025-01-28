@@ -1,30 +1,24 @@
-# snp-app
+## SNPsniper leverages state-of-the-art computational methods to predict, compare, and visualize structural changes in RNA sequences, offering comprehensive insights for research and analysis.
 
-## Włączenie aplikacji
 
-Aplikację można uruchomić na dwa sposoby:
 
-### Podstawowa wersja (bez phpMyAdmin)
+## Starting the application locally
+
+The application can be started in two ways:
+
+### Basic version (without phpMyAdmin)
 
 ```
 docker-compose -f docker-compose.yml up --build
 ```
 
-### Pełna wersja (z phpMyAdmin pod ścieżką /pma)
+### Full version (with phpMyAdmin at the path /pma)
 
 ```
 docker-compose up --build
 ```
 
-## Włączenie aplikacji z zapisywaniem logów
-
-```
-docker-compose up --build 2>&1 | tee build_log.txt
-
-```
-
-
-## Baza danych
+## Database
 
 ```
 http://localhost:8081
@@ -38,21 +32,21 @@ http://localhost:8080
 
 ```
 
-### Test polaczenia z baza danych
+### Test connection to the database
 
 ```
 http://127.0.0.1:8080/test-db
 
 ```
 
-### Test dodania wiersza (zamiast get powinno sie uzywac post ale jeszcze nie ma frontendu)
+### Test adding a row
 
 ```
 http://localhost:8080/add-analysis-result?normalSequence=AGTC&wildSequence=TGCA&result=positive%22
 
 ```
 
-### Test wyswietlania elementow z bazy danych
+### Test displaying elements from the database
 
 ```
 http://localhost:8080/analysis-results
