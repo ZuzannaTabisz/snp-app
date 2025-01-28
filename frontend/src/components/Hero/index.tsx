@@ -1,45 +1,101 @@
+"use client";
+
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 const Hero = () => {
+  const [visibleSections, setVisibleSections] = useState<number>(0);
+
+  const content = [
+    {
+      type: "heading",
+      text: "Welcome to SNPsniper!",
+    },
+    {
+      type: "paragraph",
+      text: "Discover the innovative platform dedicated to the study of RNA secondary structures and the impact of Single Nucleotide Polymorphisms (SNPs). SNPsniper leverages state-of-the-art computational methods to predict, compare, and visualize structural changes in RNA sequences, offering comprehensive insights for research and analysis.",
+    },
+    {
+      type: "buttons",
+      buttons: [
+        {
+          href: "/pair",
+          text: "Comparison",
+          className: "rounded-sm bg-primary px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-primary/80",
+        },
+        {
+          href: "/single",
+          text: "Top 10 SNPs",
+          className: "inline-block rounded-sm bg-black px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-black/90 dark:bg-white/10 dark:text-white dark:hover:bg-white/5",
+        },
+      ],
+    },
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisibleSections((prev) => (prev < content.length ? prev + 1 : prev));
+    }, 500);
+    return () => clearInterval(interval);
+  }, [content.length]);
+
   return (
-    <>
-      <section
-        id="home"
-        className="relative z-10 overflow-hidden bg-white pb-16 pt-[120px] dark:bg-gray-dark md:pb-[120px] md:pt-[150px] xl:pb-[160px] xl:pt-[180px] 2xl:pb-[200px] 2xl:pt-[210px]"
-      >
-        <div className="container">
-          <div className="-mx-4 flex flex-wrap">
-            <div className="w-full px-4">
-              <div className="mx-auto max-w-[800px] text-center">
-                <h1 className="mb-5 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
-                  Welcome to SNPsniper!
-                </h1>
-                <p className="mb-12 text-base !leading-relaxed text-body-color dark:text-body-color-dark sm:text-lg md:text-xl">
-                  Discover the innovative platform dedicated to the study of RNA secondary structures
-                  and the impact of Single Nucleotide Polymorphisms (SNPs). SNPsniper leverages state-of-the-art
-                  computational methods to predict, compare, and visualize structural changes in RNA sequences,
-                  offering comprehensive insights for research and analysis.
-                </p>
-                <div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-                  <Link
-                    href="/pair"
-                    className="rounded-sm bg-primary px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-primary/80"
-                  >
-                    Comparison
-                  </Link>
-                  <Link
-                    href="/single"
-                    className="inline-block rounded-sm bg-black px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-black/90 dark:bg-white/10 dark:text-white dark:hover:bg-white/5"
-                  >
-                    Top 10 SNPs
-                  </Link>
-                </div>
-              </div>
+    <section
+      id="home"
+      className="relative z-10 overflow-hidden bg-white pb-16 pt-[120px] dark:bg-gray-dark md:pb-[120px] md:pt-[150px] xl:pb-[160px] xl:pt-[180px] 2xl:pb-[200px] 2xl:pt-[210px]"
+    >
+      <div className="container">
+        <div className="-mx-4 flex flex-wrap">
+          <div className="w-full px-4">
+            <div className="mx-auto max-w-[800px] text-center">
+              {content.map((item, index) => {
+                if (item.type === "heading") {
+                  return (
+                    <h1
+                      key={index}
+                      className={`mb-5 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight transition-opacity duration-700 ease-in-out ${
+                        index < visibleSections ? "opacity-100" : "opacity-0"
+                      }`}
+                    >
+                      {item.text}
+                    </h1>
+                  );
+                }
+                if (item.type === "paragraph") {
+                  return (
+                    <p
+                      key={index}
+                      className={`mb-12 text-base !leading-relaxed text-body-color dark:text-body-color-dark sm:text-lg md:text-xl transition-opacity duration-700 ease-in-out ${
+                        index < visibleSections ? "opacity-100" : "opacity-0"
+                      }`}
+                    >
+                      {item.text}
+                    </p>
+                  );
+                }
+                if (item.type === "buttons") {
+                  return (
+                    <div
+                      key={index}
+                      className={`flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0 transition-opacity duration-700 ease-in-out ${
+                        index < visibleSections ? "opacity-100" : "opacity-0"
+                      }`}
+                    >
+                      {item.buttons.map((button, idx) => (
+                        <Link key={idx} href={button.href} className={button.className}>
+                          {button.text}
+                        </Link>
+                      ))}
+                    </div>
+                  );
+                }
+              })}
             </div>
           </div>
         </div>
-        <div className="absolute right-0 top-0 z-[-1] opacity-30 lg:opacity-100">
-          <svg
+      </div>
+      <div className="absolute right-0 top-0 z-[-1] opacity-30 lg:opacity-100">
+      <svg
             width="450"
             height="556"
             viewBox="0 0 450 556"
@@ -104,8 +160,8 @@ const Hero = () => {
                 y2="288"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stopColor="#4A6CF7" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
+                <stop stopColor="#F74A4A" />
+                <stop offset="1" stopColor="#F74A4A" stopOpacity="0" />
               </linearGradient>
               <radialGradient
                 id="paint1_radial_25:217"
@@ -115,8 +171,8 @@ const Hero = () => {
                 gradientUnits="userSpaceOnUse"
                 gradientTransform="translate(17.9997 182) rotate(90) scale(18)"
               >
-                <stop offset="0.145833" stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.08" />
+                <stop offset="0.145833" stopColor="#F74A4A" stopOpacity="0" />
+                <stop offset="1" stopColor="#F74A4A" stopOpacity="0.08" />
               </radialGradient>
               <radialGradient
                 id="paint2_radial_25:217"
@@ -126,8 +182,8 @@ const Hero = () => {
                 gradientUnits="userSpaceOnUse"
                 gradientTransform="translate(76.9997 288) rotate(90) scale(34)"
               >
-                <stop offset="0.145833" stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.08" />
+                <stop offset="0.145833" stopColor="#F74A4A" stopOpacity="0" />
+                <stop offset="1" stopColor="#F74A4A" stopOpacity="0.08" />
               </radialGradient>
               <linearGradient
                 id="paint3_linear_25:217"
@@ -137,8 +193,8 @@ const Hero = () => {
                 y2="351.421"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stopColor="#4A6CF7" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
+                <stop stopColor="#F74A4A" />
+                <stop offset="1" stopColor="#F74A4A" stopOpacity="0" />
               </linearGradient>
               <linearGradient
                 id="paint4_linear_25:217"
@@ -148,7 +204,7 @@ const Hero = () => {
                 y2="448.882"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stopColor="#4A6CF7" />
+                <stop stopColor="#F74A4A" />
                 <stop offset="1" stopColor="white" stopOpacity="0" />
               </linearGradient>
               <linearGradient
@@ -159,7 +215,7 @@ const Hero = () => {
                 y2="470"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stopColor="#4A6CF7" />
+                <stop stopColor="#F74A4A" />
                 <stop offset="1" stopColor="white" stopOpacity="0" />
               </linearGradient>
               <linearGradient
@@ -170,8 +226,8 @@ const Hero = () => {
                 y2="338.63"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stopColor="#4A6CF7" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
+                <stop stopColor="#F74A4A" />
+                <stop offset="1" stopColor="#F74A4A" stopOpacity="0" />
               </linearGradient>
             </defs>
           </svg>
@@ -218,8 +274,8 @@ const Hero = () => {
                 y2="212.24"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" />
+                <stop stopColor="#F74A4A" stopOpacity="0" />
+                <stop offset="1" stopColor="#F74A4A" />
               </linearGradient>
               <linearGradient
                 id="paint1_linear_25:218"
@@ -229,8 +285,8 @@ const Hero = () => {
                 y2="212.24"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" />
+                <stop stopColor="#F74A4A" stopOpacity="0" />
+                <stop offset="1" stopColor="#F74A4A" />
               </linearGradient>
               <linearGradient
                 id="paint2_linear_25:218"
@@ -240,8 +296,8 @@ const Hero = () => {
                 y2="212.24"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" />
+                <stop stopColor="#F74A4A" stopOpacity="0" />
+                <stop offset="1" stopColor="#F74A4A" />
               </linearGradient>
               <linearGradient
                 id="paint3_linear_25:218"
@@ -251,8 +307,8 @@ const Hero = () => {
                 y2="210.214"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" />
+                <stop stopColor="#F74A4A" stopOpacity="0" />
+                <stop offset="1" stopColor="#F74A4A" />
               </linearGradient>
               <linearGradient
                 id="paint4_linear_25:218"
@@ -262,8 +318,8 @@ const Hero = () => {
                 y2="99.5816"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stopColor="#4A6CF7" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
+                <stop stopColor="#F74A4A" />
+                <stop offset="1" stopColor="#F74A4A" stopOpacity="0" />
               </linearGradient>
               <radialGradient
                 id="paint5_radial_25:218"
@@ -278,9 +334,8 @@ const Hero = () => {
               </radialGradient>
             </defs>
           </svg>
-        </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 };
 

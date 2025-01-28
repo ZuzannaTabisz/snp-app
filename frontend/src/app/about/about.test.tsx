@@ -27,7 +27,7 @@ describe('AboutPage', () => {
   });
 
   it('increments visibleParagraphs over time', () => {
-    render(<AboutPage />);s
+    render(<AboutPage />);
 
     //advancing time
     act(() => {

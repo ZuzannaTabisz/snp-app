@@ -17,12 +17,21 @@ const renderWithProviders = (ui) => {
   );
 };
 
+const generateRandomValidSequence = (length) => {
+  const characters = 'AUGC';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+};
+
 global.fetch = jest.fn();
 
 describe('AnalysisResults', () => {
   const mockPush = jest.fn();
   const mockParams = { analysisId: '12345' };
-  const mockSearchParams = new URLSearchParams({ wt_sequence: 'AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGC' });
+  const mockSearchParams = new URLSearchParams({ wt_sequence: generateRandomValidSequence(50) });
 
   beforeEach(() => {
     (useRouter as jest.Mock).mockImplementation(() => ({
@@ -38,15 +47,6 @@ describe('AnalysisResults', () => {
     jest.clearAllMocks(); // clear mocks after each test to avoid interference
   });
 
-  const generateRandomValidSequence = (length) => {
-    const characters = 'AUGC';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
-  };
-
   test('renders the form elements', () => {
     renderWithProviders(<AnalysisResults />);
 
@@ -54,25 +54,26 @@ describe('AnalysisResults', () => {
     expect(screen.getByText(/Submitted Sequence:/i)).toBeInTheDocument();
   });
 
-//   test('displays error message when fetch fails', async () => {
-//     (fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: false,
-//     });
+  test('displays error message when fetch fails', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      json: async () => null,
+    });
 
-//     renderWithProviders(<AnalysisResults />);
+    renderWithProviders(<AnalysisResults />);
 
-//     await waitFor(() => {
-//       expect(screen.getByText((content, element) => {
-//         return element?.textContent.includes('Failed to fetch combined text');
-//       }, { exact: false })).toBeInTheDocument();
-//     });
-//   });
+    await waitFor(() => {
+      const errorMessage = screen.getByTestId('error-message');
+      expect(errorMessage).toBeInTheDocument();
+      console.log(errorMessage.textContent);
+    });
+  });
 
   test('displays fetched results', async () => {
     const mockResponse = {
       csv_data: { columns: ['col1', 'col2'], rows: [{ no: 1, Mutation: 'mut1', RNApdist: 0.1, 'RNAdistance(f)': 0.2, 'Z-score': 0.3 }] },
-      wt_sequence: 'AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGC',
-      mutant_sequences: { 1: 'mut_seq1' },
+      wt_sequence: generateRandomValidSequence(50),
+      mutant_sequences: { 1: generateRandomValidSequence(50) },
     };
 
     (fetch as jest.Mock).mockResolvedValueOnce({
@@ -93,8 +94,8 @@ describe('AnalysisResults', () => {
   test('handles row click and navigates to pair page', async () => {
     const mockResponse = {
       csv_data: { columns: ['col1', 'col2'], rows: [{ no: 1, Mutation: 'mut1', RNApdist: 0.1, 'RNAdistance(f)': 0.2, 'Z-score': 0.3 }] },
-      wt_sequence: 'AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGC',
-      mutant_sequences: { 1: 'mut_seq1' },
+      wt_sequence: generateRandomValidSequence(50),
+      mutant_sequences: { 1: generateRandomValidSequence(50) },
     };
 
     (fetch as jest.Mock).mockResolvedValueOnce({
@@ -109,23 +110,7 @@ describe('AnalysisResults', () => {
     });
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/pair/?mut_sequence=mut_seq1&wt_sequence=AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGC');
+      expect(mockPush).toHaveBeenCalledWith(`/pair/?mut_sequence=${mockResponse.mutant_sequences[1]}&wt_sequence=${mockResponse.wt_sequence}`);
     });
   });
-
-//   test('displays download link when results are fetched', async () => {
-//     const mockBlob = new Blob(['test'], { type: 'application/zip' });
-//     (fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       blob: async () => mockBlob,
-//     });
-
-//     renderWithProviders(<AnalysisResults />);
-
-//     await waitFor(() => {
-//       expect(screen.getByText((content, element) => {
-//         return element?.textContent.includes('Download Results');
-//       }, { exact: false })).toBeInTheDocument();
-//     });
-//   });
 });

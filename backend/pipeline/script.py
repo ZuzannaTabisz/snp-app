@@ -41,33 +41,34 @@ def run_command(command, cwd=None):
 
 def generate_mutated_sequences(wild_sequence, mutations):
     """
-    Generuje listę zmutowanych sekwencji na podstawie sekwencji dzikiej i listy mutacji.
+    Generates a list of mutated sequences based on the wild-type sequence and a list of mutations.
 
     Args:
-    - wild_sequence (str): Sekwencja dzika (oryginalna).
-    - mutations (list of str): Lista mutacji w formacie "X_n_Y", gdzie:
-        - X to nukleotyd w pozycji `n` (lub "-" dla insercji),
-        - n to indeks (1-indeksowany),
-        - Y to nukleotyd docelowy (lub "-" dla delecji).
+    - wild_sequence (str): The wild-type (original) sequence.
+    - mutations (list of str): A list of mutations in the format "X_n_Y", where:
+        - X is the nucleotide at position `n` (or "-" for insertion),
+        - n is the index (1-indexed),
+        - Y is the target nucleotide (or "-" for deletion).
 
     Returns:
-    - list of str: Lista zmutowanych sekwencji.
+    - list of str: A list of mutated sequences.
     """
+
     mutated_sequences = []
 
     for mutation in mutations:
         parts = mutation.split('_')
         if len(parts) != 3:
-            raise ValueError(f"Nieprawidłowy format mutacji: {mutation}")
+            raise ValueError(f"Incorrect mutation format: {mutation}")
 
         original, position, change = parts
         position = int(position) - 1 
 
-        if original == "-" and change in "ACGUT":  # Insercja
+        if original == "-" and change in "ACGUT":  # insertion
             mutated_sequence = wild_sequence[:position] + change + wild_sequence[position:]
-        elif change == "-":  # Delecja
+        elif change == "-":  # deletion
             mutated_sequence = wild_sequence[:position] + wild_sequence[position + 1:]
-        elif original in "ACGUT" and change in "ACGUT":  # Substytucja
+        elif original in "ACGUT" and change in "ACGUT":  # substitution
             mutated_sequence = wild_sequence[:position] + change + wild_sequence[position + 1:]
         else:
             raise ValueError(f"Nieprawidłowa mutacja: {mutation}")
@@ -78,23 +79,17 @@ def generate_mutated_sequences(wild_sequence, mutations):
 
 def process_mutation(key, mutation, script_directory, sequences_directory,wild_sequence):
     try:
-        #logger.debug(f"Processing mutation: {key}")
 
-        
         with tempfile.TemporaryDirectory(dir=sequences_directory) as mutation_dir:
             
             wt_filename = os.path.join(mutation_dir, "wt.txt")
             with open(wt_filename, 'w') as f:
                 f.write(wild_sequence + '\n')
-            #logger.debug(f"Written wt to {wt_filename}")
-
-            
+  
             mut_filename = os.path.join(mutation_dir, "mut.txt")
             with open(mut_filename, 'w') as f:
                 f.write(mutation + '\n')
-            #logger.debug(f"Written mutation to {mut_filename}")
-
-            
+  
             try:
                 command = f'bash {os.path.join(script_directory, "01-RNApdist")}'
                 run_command(command, cwd=mutation_dir)
@@ -106,7 +101,6 @@ def process_mutation(key, mutation, script_directory, sequences_directory,wild_s
             if os.path.exists(rnapdist_result_path):
                 with open(rnapdist_result_path) as f:
                     rnapdist_output = f.read().strip()
-                #logger.debug(f"RNApdist result read from {rnapdist_result_path}: {rnapdist_output}")
             else:
                 rnapdist_output = "Error: RNApdist-result.txt not found"
                 logger.error(rnapdist_output)
@@ -115,7 +109,6 @@ def process_mutation(key, mutation, script_directory, sequences_directory,wild_s
             try:
                 command = f'bash {os.path.join(script_directory, "02-RNAfold")}'
                 run_command(command, cwd=mutation_dir)
-                #logger.debug("RNAfold command executed successfully")
             except RuntimeError as e:
                 logger.error(f"Error during RNAfold: {e}")
 
@@ -123,7 +116,6 @@ def process_mutation(key, mutation, script_directory, sequences_directory,wild_s
             try:
                 command = f'bash {os.path.join(script_directory, "03-RNAdistance")}'
                 run_command(command, cwd=mutation_dir)
-                #logger.debug("RNAdistance command executed successfully")
             except RuntimeError as e:
                 logger.error(f"Error during RNAdistance: {e}")
 
@@ -131,7 +123,6 @@ def process_mutation(key, mutation, script_directory, sequences_directory,wild_s
             if os.path.exists(rnadistance_result_path):
                 with open(rnadistance_result_path) as f:
                     rnadistance_output = f.read().strip().split()
-                #logger.debug(f"RNAdistance result read from {rnadistance_result_path}: {rnadistance_output}")
             else:
                 rnadistance_output = ["Error", "RNAdistance-result.txt not found"]
                 logger.error(rnadistance_output)

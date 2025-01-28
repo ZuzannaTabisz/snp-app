@@ -8,6 +8,7 @@ import { NWaligner } from "seqalign";
 import Image from 'next/image';
 import "../../../styles/index.css";
 
+
 interface ConversionResult {
   mutations: string[];
   wtSequence: string;
@@ -36,46 +37,61 @@ const AnalysisPage = () => {
   const [mutations, setMutations] = useState<string[]>([]);
 
   const fetchResults = useCallback(async () => {
-    console.log("In fetchResults");
-    const response = await fetch(`http://localhost:8080/api/results/pair/${analysisId}`);
-    if (!response.ok) throw new Error("Failed to fetch combined text");
-    const data = await response.json();
-    setRNAPdist(data.RNApdist);
-    setRNAFold(data.RNAfold);
-    setRNADistance(data.RNAdistance);
-    console.log("RNAresults: ", data);
-    console.log("RNApdist: ", data.RNApdist);
-    console.log("RNAfold: ", data.RNAfold);
-    console.log("RNAdistance: ", data.RNAdistance);
-    setMutantSequence(data.mut_sequence);
-    setWildSequence(data.wt_sequence);
-    console.log("Mutant:",data.mut_sequence)
-    console.log("Wild type:",data.wt_sequence) 
+    try {
+      console.log("In fetchResults");
+      const response = await fetch(`http://localhost:8080/api/results/pair/${analysisId}`);
+      if (!response.ok) throw new Error("Failed to fetch combined text");
+      const data = await response.json();
+      setRNAPdist(data.RNApdist);
+      setRNAFold(data.RNAfold);
+      setRNADistance(data.RNAdistance);
+      console.log("RNAresults: ", data);
+      console.log("RNApdist: ", data.RNApdist);
+      console.log("RNAfold: ", data.RNAfold);
+      console.log("RNAdistance: ", data.RNAdistance);
+      setMutantSequence(data.mut_sequence);
+      setWildSequence(data.wt_sequence);
+      console.log("Mutant:", data.mut_sequence);
+      console.log("Wild type:", data.wt_sequence);
+    } catch (error) {
+      console.error("Error fetching results:", error);
+      setError("Failed to fetch results");
+    }
   }, [analysisId]);
   
   const fetchDownloadUrl = useCallback(async () => {
-    const response = await fetch(`http://localhost:8080/api/results/${analysisId}/zip-download`);
-    if (!response.ok) throw new Error("Failed to fetch ZIP download");
-    const blob = await response.blob();
-    setDownloadUrl(URL.createObjectURL(blob));
+    try {
+      const response = await fetch(`http://localhost:8080/api/results/${analysisId}/zip-download`);
+      if (!response.ok) throw new Error("Failed to fetch ZIP download");
+      const blob = await response.blob();
+      setDownloadUrl(URL.createObjectURL(blob));
+    } catch (error) {
+      console.error("Error fetching ZIP download:", error);
+      setError("Failed to fetch ZIP download");
+    }
   }, [analysisId]);
   
   const fetchSvgUrls = useCallback(async () => {
-    const endpoints = {
-      svgMut: `/pair/${analysisId}/rna-plot-mut`,
-      svgWt: `/pair/${analysisId}/rna-plot-wt`,
-      treeMut: `/pair/${analysisId}/hit-tree-mut`,
-      treeWt: `/pair/${analysisId}/hit-tree-wt`,
-    };
+    try {
+      const endpoints = {
+        svgMut: `/pair/${analysisId}/rna-plot-mut`,
+        svgWt: `/pair/${analysisId}/rna-plot-wt`,
+        treeMut: `/pair/${analysisId}/hit-tree-mut`,
+        treeWt: `/pair/${analysisId}/hit-tree-wt`,
+      };
   
-    for (const [key, endpoint] of Object.entries(endpoints)) {
-      const response = await fetch(`http://localhost:8080/api/results${endpoint}`);
-      if (!response.ok) throw new Error(`Failed to fetch ${key}`);
-      const url = response.url;
-      if (key === "svgMut") setSvgUrlMut(url);
-      if (key === "svgWt") setSvgUrlWt(url);
-      if (key === "treeMut") setTreeSvgUrlMut(url);
-      if (key === "treeWt") setTreeSvgUrlWt(url);
+      for (const [key, endpoint] of Object.entries(endpoints)) {
+        const response = await fetch(`http://localhost:8080/api/results${endpoint}`);
+        if (!response.ok) throw new Error(`Failed to fetch ${key}`);
+        const url = response.url;
+        if (key === "svgMut") setSvgUrlMut(url);
+        if (key === "svgWt") setSvgUrlWt(url);
+        if (key === "treeMut") setTreeSvgUrlMut(url);
+        if (key === "treeWt") setTreeSvgUrlWt(url);
+      }
+    } catch (error) {
+      console.error("Error fetching SVG URLs:", error);
+      setError("Failed to fetch SVG URLs");
     }
   }, [analysisId]);
 
@@ -192,7 +208,9 @@ const AnalysisPage = () => {
       </h1>
 
       {error && (
-        <p className="analysis-error mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
+        <p className="analysis-error mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words"
+          data-testid="error-message"
+          >
           {error}
         </p>
       )}
@@ -202,13 +220,13 @@ const AnalysisPage = () => {
         <div>
           <strong>Wild-Type Sequence:</strong>
           <div className="sequence-box mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
-            <span className="font-mono">{highlighted ? highlighted.highlightedWild : "N/A"}</span>
+            <p className="font-mono">{highlighted ? highlighted.highlightedWild : "N/A"}</p>
           </div>
         </div>
         <div>
           <strong>Mutant Sequence:</strong>
           <div className="sequence-box mt-2 p-4 rounded-md bg-white text-black dark:bg-gray-600 dark:text-white overflow-x-auto" style={{ whiteSpace: 'nowrap' }}>
-            <span className="font-mono">{highlighted ? highlighted.highlightedMutant : "N/A"}</span>
+            <p className="font-mono">{highlighted ? highlighted.highlightedMutant : "N/A"}</p>
           </div>
         </div>
         

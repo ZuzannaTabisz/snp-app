@@ -12,14 +12,8 @@ class FlaskAppTests(unittest.TestCase):
         self.app.testing = True      # testing mode
 
     def tearDown(self):
-        # Clean up after tests
         pass  
 
-    # Uncomment the home page test if needed
-    # def test_home_page(self):
-    #     """Test the home page."""
-    #     response = self.app.get('/') 
-    #     self.assertEqual(response.status_code, 200)  # 200 - success
 
     @patch('uuid.uuid4', return_value=uuid.uuid4())
     def test_post_analysis_request_pair(self, mock_uuid):
@@ -38,7 +32,6 @@ class FlaskAppTests(unittest.TestCase):
         analysis_id = response_data.get('analysis_id')
         print(f"Test received analysis_id: {analysis_id}")
         
-        # Test getting an analysis result.
         response = self.app.get(f'/api/results/pair/{analysis_id}')  
         self.assertEqual(response.status_code, 200)  
         print(response)
@@ -62,20 +55,6 @@ class FlaskAppTests(unittest.TestCase):
         
         print(f"Test received analysis_id: {received_analysis_id}")
 
-    # Uncomment the invalid analysis ID tests if needed
-    # def test_invalid_analysis_id_pair(self):
-    #     """Test behavior with an invalid analysis ID."""
-    #     invalid_id = "invalid-id"
-    #     response = self.app.get(f'/api/results/pair/{invalid_id}') 
-    #     self.assertEqual(response.status_code, 404) 
-    #     self.assertIn(b'Analysis not found', response.data)  
-
-    # def test_invalid_analysis_id_single(self):
-    #     """Test behavior with an invalid analysis ID."""
-    #     invalid_id = "invalid-id"
-    #     response = self.app.get(f'/api/results/single/{invalid_id}') 
-    #     self.assertEqual(response.status_code, 404) 
-    #     self.assertIn(b'Analysis not found', response.data)  
 
 if __name__ == '__main__':
     unittest.main()

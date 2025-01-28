@@ -34,7 +34,7 @@ interface ApiResponse {
 
 const AnalysisResults = () => {
   const { analysisId } = useParams();
-  //router params
+  //router parameters
   const searchParams = useSearchParams();
   const router = useRouter();
   const wt_sequence = searchParams.get('wt_sequence');
@@ -51,19 +51,15 @@ const AnalysisResults = () => {
 
   const { theme } = useTheme();
 
-
-
-
   useEffect(() => {
         setWildSequence(wt_sequence);
-        //setMessage("Analysis started");
     }, [analysisId,wt_sequence]);
 
   const fetchResults = useCallback(async () => {
     try {
       console.log("Fetching results");
       const response = await fetch(`http://localhost:8080/api/results/single/${analysisId}`);
-      if (!response.ok) throw new Error("Failed to fetch combined text");
+      if (!response.ok) throw new Error("Failed to fetch results");
 
       const data: ApiResponse = await response.json();
       console.log("Fetched results:", data);
@@ -132,6 +128,7 @@ const AnalysisResults = () => {
         {error && (
         <p
           className="mb-4 text-center text-lg font-medium text-red-600 dark:text-red-400 whitespace-pre-wrap break-words"
+          data-testid="error-message"
         >
           {error}
         </p>

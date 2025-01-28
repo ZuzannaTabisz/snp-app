@@ -4,20 +4,17 @@ info:
   version: '1.0.0'
   description: |
     API for RNA sequence analysis and retrieving results in TXT and SVG format.
-
 servers:
   websocket:
     protocol: wss
-    host: ws://api.snp-rna-analysis.com/ws # Example placeholder adresses
   rest:
-    host: api.snp-rna-analysis.com
-    protocol: https
+    protocol: http
 channels:
-  analyzeTwoSequence:
-    address: '/api/analyze/two-sequence'
+  analyzePair:
+    address: /api/analyze/pair
     messages:
-      analyzeTwoSequenceRequest:
-        name: AnalyzeTwoSequenceRequest
+      analyzePairRequest:
+        name: AnalyzePairRequest
         payload:
           type: object
           properties:
@@ -30,8 +27,8 @@ channels:
             snp_id:
               type: string
               description: Optional SNP identifier from dbSNP.
-      analyzeTwoSequenceResponse:
-        name: AnalyzeTwoSequenceResponse
+      analyzePairResponse:
+        name: AnalyzePairResponse
         payload:
           type: object
           properties:
@@ -45,13 +42,8 @@ channels:
             url:
               type: string
               description: Link to analysis results.
-        description: |
-          Errors:
-          - **400**: Invalid input data.
-          - **404**: SNP sequences not found (for dbSNP).
-          - **500**: Server error while submitting analysis.
   analyzeOneSequence:
-    address: '/api/analyze/one-sequence'
+    address: /api/analyze/one-sequence
     messages:
       analyzeOneSequenceRequest:
         name: AnalyzeOneSequenceRequest
@@ -76,12 +68,40 @@ channels:
             url:
               type: string
               description: Link to analysis results.
-        description: |
-          Errors:
-          - **400**: Invalid input data (e.g., incorrect sequence format).
-          - **500**: Server error while submitting analysis.
+  taskStatus:
+    address: /ws/task_status/{analysis_id}
+    description: WebSocket for real-time status updates of an analysis.
+    subscribe:
+      message:
+        name: TaskStatusUpdate
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+            status:
+              type: string
+              description: Current analysis status (e.g., "Analysis started").
+  progressUpdate:
+    address: /ws/progress_update/{analysis_id}
+    description: WebSocket for tracking the progress of an analysis in real time.
+    subscribe:
+      message:
+        name: ProgressUpdate
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+            progress:
+              type: number
+              description: Analysis progress in percentage.
   getResults:
-    address: '/api/results/{analysis_id}'
+    address: /api/results/{analysis_id}
     messages:
       getResultsRequest:
         name: GetResultsRequest
@@ -161,12 +181,8 @@ channels:
                 status:
                   type: string
                   description: Current analysis status.
-        description: |
-          Errors:
-          - **404**: Analysis results not found.
-          - **500**: Server error while retrieving results.
   downloadZip:
-    address: '/api/results/{analysis_id}/zip-download'
+    address: /api/results/{analysis_id}/zip-download
     messages:
       downloadZipRequest:
         name: DownloadZipRequest
@@ -182,12 +198,8 @@ channels:
         payload:
           type: string
           description: Zip file containing all analysis results.
-        description: |
-          Errors:
-          - **404**: Zip file not found for the given analysis identifier.
-          - **500**: Server error while generating the ZIP file.
   hitTree:
-    address: '/api/results/{analysis_id}/hit-tree'
+    address: /api/results/{analysis_id}/hit-tree
     messages:
       hitTreeRequest:
         name: HitTreeRequest
@@ -203,12 +215,8 @@ channels:
         payload:
           type: string
           description: SVG visualization of the HIT tree.
-        description: |
-          Errors:
-          - **404**: HIT tree not found for the given analysis identifier.
-          - **500**: Server error while retrieving the HIT tree.
   rnaPlotWildType:
-    address: '/api/results/{analysis_id}/rna-plot-wt'
+    address: /api/results/{analysis_id}/rna-plot-wt
     messages:
       rnaPlotWildTypeRequest:
         name: RnaPlotWildTypeRequest
@@ -224,12 +232,8 @@ channels:
         payload:
           type: string
           description: SVG visualization of RNAplot for wild type.
-        description: |
-          Errors:
-          - **404**: RNAplot structure for wild type not found for the given analysis identifier.
-          - **500**: Server error while retrieving RNAplot structure.
   rnaPlotMutant:
-    address: '/api/results/{analysis_id}/rna-plot-mut'
+    address: /api/results/{analysis_id}/rna-plot-mut
     messages:
       rnaPlotMutantRequest:
         name: RnaPlotMutantRequest
@@ -245,38 +249,3 @@ channels:
         payload:
           type: string
           description: SVG visualization of RNAplot for mutant.
-        description: |
-          Errors:
-          - **404**: RNAplot structure for mutant not found for the given analysis identifier.
-          - **500**: Server error while retrieving RNAplot structure.
-  statusUpdate:
-    address: '/ws/status'
-    messages:
-      statusUpdateRequest:
-        name: StatusUpdateRequest
-        payload:
-          type: object
-          properties:
-            analysis_id:
-              type: string
-              format: uuid
-              description: Unique analysis identifier (UUID).
-      statusUpdateResponse:
-        name: StatusUpdateResponse
-        payload:
-          type: object
-          properties:
-            analysis_id:
-              type: string
-              format: uuid
-              description: Unique analysis identifier (UUID).
-            status:
-              type: string
-              description: Current analysis status (e.g., "in_progress").
-            progress:
-              type: integer
-              description: Progress of the analysis (in %).
-        description: |
-          Errors:
-          - **400**: Missing or invalid analysis identifier.
-          - **500**: Server error.

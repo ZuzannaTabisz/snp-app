@@ -15,31 +15,43 @@ const renderWithProviders = (ui) => {
   );
 };
 
+const generateRandomValidSequence = (length) => {
+  const characters = 'AUGC';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+};
+
+const generateMutantSequence = (wildSequence) => {
+  const characters = 'AUGC';
+  const index = Math.floor(Math.random() * wildSequence.length);
+  let mutantSequence = wildSequence.split('');
+  let newChar = characters.charAt(Math.floor(Math.random() * characters.length));
+  while (newChar === wildSequence[index]) {
+    newChar = characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  mutantSequence[index] = newChar;
+  return mutantSequence.join('');
+};
+
 global.fetch = jest.fn();
 
 describe('PairPage', () => {
   const mockPush = jest.fn();
-  
+
   beforeEach(() => {
     (useRouter as jest.Mock).mockImplementation(() => ({
       push: mockPush, // mock function for the push method
     }));
-    
+
     jest.clearAllMocks(); // clear mocks before each test
   });
 
   afterEach(() => {
     jest.clearAllMocks(); // clear mocks after each test to avoid interference
   });
-
-  const generateRandomValidSequence = (length) => {
-    const characters = 'AUGC';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
-  };
 
   test('renders the form elements', () => {
     renderWithProviders(<PairPage />);
@@ -52,7 +64,6 @@ describe('PairPage', () => {
   });
 
   describe('Sequence Validation', () => {
-
     test('displays an error for invalid characters', () => {
       renderWithProviders(<PairPage />);
       const input = screen.getByPlaceholderText(/Enter Mutant RNA Sequence/i);
@@ -68,53 +79,40 @@ describe('PairPage', () => {
     const wildInput = screen.getByPlaceholderText(/Enter Wild-type RNA Sequence/i);
     const dbSnpInput = screen.getByPlaceholderText(/Enter dbSNP ID/i);
     const submitButton = screen.getByText(/Submit/i);
-  
-    fireEvent.change(mutantInput, { target: { value: generateRandomValidSequence(100) } });
-    fireEvent.change(wildInput, { target: { value: generateRandomValidSequence(100) } });
-    //fireEvent.change(dbSnpInput, { target: { value: 'dbSNP_ID' } });
+
+    const wildSequence = generateRandomValidSequence(100);
+    const mutantSequence = generateMutantSequence(wildSequence);
+
+    fireEvent.change(mutantInput, { target: { value: mutantSequence } });
+    fireEvent.change(wildInput, { target: { value: wildSequence } });
+    fireEvent.change(dbSnpInput, { target: { value: 'dbSNP_ID' } });
 
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ analysis_id: '12345' }),
     });
-  
+
     fireEvent.click(submitButton);
-  
+
     //wait for router.push to be called
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/pair/12345');
     });
   });
 
-  // test('displays error when sequences contain both T and U', async () => {
-  //   renderWithProviders(<PairPage />);
-  //   const mutantInput = screen.getByPlaceholderText(/Enter Mutant RNA Sequence/i);
-  //   const wildInput = screen.getByPlaceholderText(/Enter Wild-type RNA Sequence/i);
-  //   const submitButton = screen.getByText(/Submit/i);
-  
-  //   fireEvent.change(mutantInput, { target: { value: 'AUGCT' } });
-  //   fireEvent.change(wildInput, { target: { value: 'AUGCU' } });
-  //   fireEvent.click(submitButton);
-  
-  //   await waitFor(() => {
-  //     expect(screen.getByText('Sequences cannot contain both T and U.', { exact: false })).toBeInTheDocument();
-  //   });
-  // });
+  test('displays error when sequences are too long', async () => {
+    renderWithProviders(<PairPage />);
+    const mutantInput = screen.getByPlaceholderText(/Enter Mutant RNA Sequence/i);
+    const wildInput = screen.getByPlaceholderText(/Enter Wild-type RNA Sequence/i);
 
-  // test('displays error when mutant and wild-type sequences use inconsistent T or U', async () => {
-  //   renderWithProviders(<PairPage />);
-  //   const mutantInput = screen.getByPlaceholderText(/Enter Mutant RNA Sequence/i);
-  //   const wildInput = screen.getByPlaceholderText(/Enter Wild-type RNA Sequence/i);
-  //   const submitButton = screen.getByText(/Submit/i);
-  
-  //   fireEvent.change(mutantInput, { target: { value: 'AUGCU' } });
-  //   fireEvent.change(wildInput, { target: { value: 'AUGCT' } });
-  //   fireEvent.click(submitButton);
-  
-  //   await waitFor(() => {
-  //     expect(screen.getByText('Mutant and wild-type sequences must consistently use T or U.', { exact: false })).toBeInTheDocument();
-  //   });
-  // });
+
+    fireEvent.change(wildInput, { target: { value: 'A'.repeat(2001) } });
+    fireEvent.change(mutantInput, { target: { value: 'A'.repeat(2001) } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Sequence is too long. Maximum length is 2000.', { exact: false })).toBeInTheDocument();
+    });
+  });
 
   test('displays error for unsupported file format', async () => {
     renderWithProviders(<PairPage />);
@@ -133,25 +131,24 @@ describe('PairPage', () => {
     renderWithProviders(<PairPage />);
     const dbSnpInput = screen.getByPlaceholderText(/Enter dbSNP ID/i);
     const searchButton = screen.getByText(/Search dbSNP/i);
-  
+
     fireEvent.change(dbSnpInput, { target: { value: 'rs328' } });
-  
-    const mockWildSequence = 'GGCACCTGCGGTATTTGTGAAATGCCATGACAAGTCTCTGAATAAGAAGTCAGGCTGGTGAGCATTCTGGGCTAAAGCTGACTGGGCATCCTGAGCTTGCA';
-    const mockMutantSequence = 'GGCACCTGCGGTATTTGTGAAATGCCATGACAAGTCTCTGAATAAGAAGTGAGGCTGGTGAGCATTCTGGGCTAAAGCTGACTGGGCATCCTGAGCTTGCA';
+
+    const mockWildSequence = generateRandomValidSequence(100);
+    const mockMutantSequence = generateMutantSequence(mockWildSequence);
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({ wildType: mockWildSequence, mutantType: mockMutantSequence }),
     });
-  
+
     fireEvent.click(searchButton);
-  
+
     await waitFor(() => {
-      //expect(fetchDbSnp).toBe(true);
       expect(screen.getByDisplayValue(mockWildSequence, { exact: false })).toBeInTheDocument();
       expect(screen.getByDisplayValue(mockMutantSequence, { exact: false })).toBeInTheDocument();
       expect(screen.getByDisplayValue('rs328')).toBeInTheDocument();
     });
-  })
+  });
 
   test('handles example click for example 1', () => {
     renderWithProviders(<PairPage />);
@@ -210,34 +207,6 @@ describe('PairPage', () => {
       expect(screen.getByText('Please provide a valid dbSNP ID', { exact: false })).toBeInTheDocument();
     });
   });
-
-  // test('displays error when dbSnpId exceeds 40 characters', async () => {
-  //   renderWithProviders(<PairPage />);
-  //   const dbSnpInput = screen.getByPlaceholderText(/Enter dbSNP ID/i);
-  //   const searchButton = screen.getByText(/Search dbSNP/i);
-
-  //   fireEvent.change(dbSnpInput, { target: { value: 'a'.repeat(41) } });
-  //   fireEvent.click(searchButton);
-
-  //   await waitFor(() => {
-  //     expect(screen.getByText('dbSNP ID cannot exceed 40 characters.', { exact: false })).toBeInTheDocument();
-  //   });
-  // });
-
-  // test('displays error when sequences are too long', async () => {
-  //   renderWithProviders(<PairPage />);
-  //   const mutantInput = screen.getByPlaceholderText(/Enter Mutant RNA Sequence/i);
-  //   const wildInput = screen.getByPlaceholderText(/Enter Wild-type RNA Sequence/i);
-  //   const submitButton = screen.getByText(/Submit/i);
-
-  //   fireEvent.change(mutantInput, { target: { value: 'A'.repeat(10001) } });
-  //   fireEvent.change(wildInput, { target: { value: 'A'.repeat(10001) } });
-  //   fireEvent.click(submitButton);
-
-  //   await waitFor(() => {
-  //     expect(screen.getByText('Sequence length exceeds the maximum allowed length of 10000.', { exact: false })).toBeInTheDocument();
-  //   });
-  // });
 
   test('displays error when sequences are too short', async () => {
     renderWithProviders(<PairPage />);

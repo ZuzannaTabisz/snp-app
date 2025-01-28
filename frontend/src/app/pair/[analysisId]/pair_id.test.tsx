@@ -1,7 +1,8 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import AnalysisPage from './page';
 import { ThemeProvider } from 'next-themes';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import '@testing-library/jest-dom';
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
@@ -17,13 +18,39 @@ const renderWithProviders = (ui) => {
   );
 };
 
+const generateRandomValidSequence = (length) => {
+  const characters = 'AUGC';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+};
+
+const generateMutantSequence = (wildSequence) => {
+  const characters = 'AUGC';
+  const index = Math.floor(Math.random() * wildSequence.length);
+  let mutantSequence = wildSequence.split('');
+  let newChar = characters.charAt(Math.floor(Math.random() * characters.length));
+  while (newChar === wildSequence[index]) {
+    newChar = characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  mutantSequence[index] = newChar;
+  return mutantSequence.join('');
+};
+
 global.fetch = jest.fn();
 
 describe('AnalysisPage', () => {
   const mockPush = jest.fn();
   const mockParams = { analysisId: '12345' };
-  const mockSearchParams = new URLSearchParams({ wt_sequence: 'AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGC', mut_sequence: 'AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGU' });
+  const wildSequence = generateRandomValidSequence(50);
+  const mutantSequence = generateMutantSequence(wildSequence);
+  const mockSearchParams = new URLSearchParams({ wt_sequence: wildSequence });
 
+  let consoleLogSpy;
+  let consoleErrorSpy;
+  let consoleWarnSpy;
   beforeEach(() => {
     (useRouter as jest.Mock).mockImplementation(() => ({
       push: mockPush,
@@ -32,107 +59,121 @@ describe('AnalysisPage', () => {
     (useSearchParams as jest.Mock).mockImplementation(() => mockSearchParams);
 
     jest.clearAllMocks();
+
+    // avoiding prints form alignment
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-//   
-//   describe('Unit Tests', () => {
-//     test('convertToAligned returns correct alignment and mutations', () => {
-//       const wildSeq = 'AUGCUAUGGA';
-//       const mutSeq = 'AUGCUAUGGU';
-//       const result = convertToAligned(wildSeq, mutSeq);
+  test('renders the form elements', () => {
+    renderWithProviders(<AnalysisPage />);
 
-//       expect(result.mutations).toEqual(['A_9_U']);
-//       expect(result.wtSequence).toBe('AUGCUAUGGA');
-//       expect(result.mutSequence).toBe('AUGCUAUGGU');
-//     });
+    expect(screen.getByText(/Analysis Results/i)).toBeInTheDocument();
+    expect(screen.getByText(/Submitted Sequences:/i)).toBeInTheDocument();
+  });
 
-//     test('highlightDifferences highlights differences correctly', () => {
-//       const wildSeq = 'AUGCUAUGGA';
-//       const mutSeq = 'AUGCUAUGGU';
-//       const result = highlightDifferences(wildSeq, mutSeq);
+  test('displays fetched results', async () => {
+    const mockResponse = {
+      RNApdist: 0.1,
+      RNAfold: { mutant_energy: -10, wild_type_energy: -12 },
+      RNAdistance: { RNAdistance_result: { f: 0.2, h: 0.3 }, RNAdistance_backtrack: 'backtrack_data' },
+      mut_sequence: mutantSequence,
+      wt_sequence: wildSequence,
+    };
 
-//       expect(result.highlightedWild.length).toBe(10);
-//       expect(result.highlightedMutant.length).toBe(10);
-//     });
-//   });
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        blob: async () => new Blob(['test'], { type: 'application/zip' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        url: 'http://localhost:8080/api/results/pair/12345/rna-plot-mut',
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        url: 'http://localhost:8080/api/results/pair/12345/rna-plot-wt',
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        url: 'http://localhost:8080/api/results/pair/12345/hit-tree-mut',
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        url: 'http://localhost:8080/api/results/pair/12345/hit-tree-wt',
+      });
 
-//   
-//   describe('Component Tests', () => {
-//     test('renders the form elements', () => {
-//       renderWithProviders(<AnalysisPage />);
+    renderWithProviders(<AnalysisPage />);
 
-//       expect(screen.getByText(/Analysis Results/i)).toBeInTheDocument();
-//       expect(screen.getByText(/Submitted Sequences:/i)).toBeInTheDocument();
-//     });
+    await waitFor(() => {
+      expect(screen.getByText(/0.1/i)).toBeInTheDocument();
+      expect(screen.getByText(/-10 kcal\/mol/i)).toBeInTheDocument();
+      expect(screen.getByText(/-12 kcal\/mol/i)).toBeInTheDocument();
+      expect(screen.getByText(/0.2/i)).toBeInTheDocument();
+      expect(screen.getByText(/0.3/i)).toBeInTheDocument();
+      expect(screen.getByText(/backtrack_data/i)).toBeInTheDocument();
+    });
 
-//     test('displays fetched results', async () => {
-//       const mockResponse = {
-//         RNApdist: 0.1,
-//         RNAfold: { mutant_energy: -10, wild_type_energy: -12 },
-//         RNAdistance: { RNAdistance_result: { f: 0.2, h: 0.3 }, RNAdistance_backtrack: 'backtrack_data' },
-//         mut_sequence: 'AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGU',
-//         wt_sequence: 'AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGC',
-//       };
+    await waitFor(() => {
+      expect(screen.getByAltText('WT SVG')).toBeInTheDocument();
+      expect(screen.getByAltText('MUT SVG')).toBeInTheDocument();
+      expect(screen.getByAltText('TREE WT SVG')).toBeInTheDocument();
+      expect(screen.getByAltText('TREE MUT SVG')).toBeInTheDocument();
+    });
+  });
 
-//       (fetch as jest.Mock).mockResolvedValueOnce({
-//         ok: true,
-//         json: async () => mockResponse,
-//       });
+  test('displays error message when fetch SVG URLs fails', async () => {
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          RNApdist: 0.1,
+          RNAfold: { mutant_energy: -10, wild_type_energy: -12 },
+          RNAdistance: { RNAdistance_result: { f: 0.2, h: 0.3 }, RNAdistance_backtrack: 'backtrack_data' },
+          mut_sequence: mutantSequence,
+          wt_sequence: wildSequence,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        blob: async () => new Blob(['test'], { type: 'application/zip' }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        url: '',
+      });
 
-//       renderWithProviders(<AnalysisPage />);
+    renderWithProviders(<AnalysisPage />);
 
-//       await waitFor(() => {
-//         expect(screen.getByText(/0.1/i)).toBeInTheDocument();
-//         expect(screen.getByText(/-10 kcal\/mol/i)).toBeInTheDocument();
-//         expect(screen.getByText(/-12 kcal\/mol/i)).toBeInTheDocument();
-//         expect(screen.getByText(/0.2/i)).toBeInTheDocument();
-//         expect(screen.getByText(/0.3/i)).toBeInTheDocument();
-//       });
-    // });
+    await waitFor(() => {
+      const errorMessage = screen.getByTestId('error-message');
+      expect(errorMessage).toBeInTheDocument();
+      console.log(errorMessage.textContent);
+    });
+  });
 
-    // test('handles row click and navigates to pair page', async () => {
-    //   const mockResponse = {
-    //     RNApdist: 0.1,
-    //     RNAfold: { mutant_energy: -10, wild_type_energy: -12 },
-    //     RNAdistance: { RNAdistance_result: { f: 0.2, h: 0.3 }, RNAdistance_backtrack: 'backtrack_data' },
-    //     mut_sequence: 'AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGU',
-    //     wt_sequence: 'AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGC',
-    //   };
+  test('displays error message when fetch fails', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      json: async () => null,
+    });
 
-    //   (fetch as jest.Mock).mockResolvedValueOnce({
-    //     ok: true,
-    //     json: async () => mockResponse,
-    //   });
+    renderWithProviders(<AnalysisPage />);
 
-    //   renderWithProviders(<AnalysisPage />);
+    await waitFor(() => {
+      const errorMessage = screen.getByTestId('error-message');
+      expect(errorMessage).toBeInTheDocument();
+      console.log(errorMessage.textContent);
+    });
+  });
 
-    //   await waitFor(() => {
-    //     fireEvent.click(screen.getByText(/AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGU/i));
-    //   });
-
-    //   await waitFor(() => {
-    //     expect(mockPush).toHaveBeenCalledWith('/pair/?mut_sequence=AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGU&wt_sequence=AUGCUAUGGAUGCUAGCUAUGGCAUCGGAUCCAGCUAUCCGCUAUGCUAUCGAUCGAUCGAUCGAUGCGAUCGGAUCGGAGC');
-    //   });
-    // });
-
-    // test('displays download link when results are fetched', async () => {
-    //   const mockBlob = new Blob(['test'], { type: 'application/zip' });
-    //   (fetch as jest.Mock).mockResolvedValueOnce({
-    //     ok: true,
-    //     blob: async () => mockBlob,
-    //   });
-
-    //   renderWithProviders(<AnalysisPage />);
-
-    //   await waitFor(() => {
-    //     expect(screen.getByText((content, element) => {
-    //       return element?.textContent.includes('Download Results');
-    //     }, { exact: false })).toBeInTheDocument();
-    //   });
-    // });
-//   });
 });

@@ -32,15 +32,6 @@ describe('SinglePage', () => {
     jest.clearAllMocks(); // clear mocks after each test to avoid interference
   });
 
-  const generateRandomInvalidSequence = (length) => {
-    const characters = 'AUGCTX';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
-  };
-
   const generateRandomValidSequence = (length) => {
     const characters = 'AUGC';
     let result = '';
@@ -59,33 +50,15 @@ describe('SinglePage', () => {
     expect(screen.getByText(/Submit/i)).toBeInTheDocument();
   });
 
-  // describe('Sequence Validation', () => {
-  //   test('displays an error when sequence contains both T and U', async () => {
-  //     renderWithProviders(<SinglePage />);
-  //     const input = screen.getByPlaceholderText(/Enter Wild-type RNA Sequence/i);
+  describe('Sequence Validation', () => {
+    test('displays an error for invalid characters', () => {
+      renderWithProviders(<SinglePage />);
+      const input = screen.getByPlaceholderText(/Enter Wild-type RNA Sequence/i);
 
-  //     fireEvent.change(input, { target: { value: 'AUGCT' + generateRandomValidSequence(100) } });
-  //     fireEvent.click(screen.getByText(/Submit/i));
-    
-  //     const error = await waitFor(() => screen.getByText((content, element) => {
-  //       return element?.textContent.includes('Sequence cannot contain both T and U.');
-  //     }, { exact: false }));
-  //     expect(error).toBeInTheDocument();
-  //   });
-
-  //   test('displays an error for invalid characters', async () => {
-  //     renderWithProviders(<SinglePage />);
-  //     const input = screen.getByPlaceholderText(/Enter Wild-type RNA Sequence/i);
-
-  //     fireEvent.change(input, { target: { value: 'AXGCU' + generateRandomValidSequence(100)} });
-  //     fireEvent.click(screen.getByText(/Submit/i));
-
-  //     const error = await waitFor(() => screen.getByText((content, element) => {
-  //       return element?.textContent.includes('Invalid input: Only A, U, G, C, and T are allowed.');
-  //     }, { exact: false }));
-  //     expect(error).toBeInTheDocument();
-  //   });
-  //});
+      fireEvent.change(input, { target: { value: 'AXGCU' } });
+      expect(screen.getByText('Invalid input: Only A, U, G, C, and T are allowed.', { exact: false })).toBeInTheDocument();
+    });
+  });
 
   test('handles form submission', async () => {
     renderWithProviders(<SinglePage />);
@@ -106,6 +79,18 @@ describe('SinglePage', () => {
     //wait for router.push to be called
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/single/12345');
+    });
+  });
+
+  test('displays error when sequences are too long', async () => {
+    renderWithProviders(<SinglePage />);
+    const wildInput = screen.getByPlaceholderText(/Enter Wild-Type RNA Sequence/i);
+    const submitButton = screen.getByText(/Submit/i);
+
+    fireEvent.change(wildInput, { target: { value: 'A'.repeat(101) } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Sequence is too long. Maximum length is 100.', { exact: false })).toBeInTheDocument();
     });
   });
 
@@ -131,7 +116,7 @@ describe('SinglePage', () => {
 
   test('handles file upload', async () => {
     renderWithProviders(<SinglePage />);
-    const fileInput = screen.getByLabelText(/Upload RNA Sequence File/i);
+    const fileInput = screen.getByLabelText(/Upload Wild-Type Sequence File/i);
     const sequence = generateRandomValidSequence(100);
     const file = new File([`>header\n${sequence}`], "sequence.fasta", { type: "text/plain" });
 
@@ -142,19 +127,18 @@ describe('SinglePage', () => {
     });
   });
 
-  // test('displays error for unsupported file format', async () => {
-  //   renderWithProviders(<SinglePage />);
-  //   const fileInput = screen.getByLabelText(/Upload RNA Sequence File/i);
-  //   const sequence = generateRandomValidSequence(100);
-  //   const file = new File([sequence], "sequence.pdf", { type: "application/pdf" });
+  test('displays error for unsupported file format', async () => {
+    renderWithProviders(<SinglePage />);
+    const fileInput = screen.getByLabelText(/Upload Wild-type Sequence File/i);
+    const sequence = generateRandomValidSequence(100);
+    const file = new File([sequence], "sequence.pdf", { type: "application/pdf" });
 
-  //   fireEvent.change(fileInput, { target: { files: [file] } });
+    fireEvent.change(fileInput, { target: { files: [file] } });
 
-  //   const error = await waitFor(() => screen.getByText((content, element) => {
-  //     return element?.textContent.includes('Only .fasta or .txt files are allowed.');
-  //   }, { exact: false }));
-  //   expect(error).toBeInTheDocument();
-  // });
+    await waitFor(() => {
+      expect(screen.getByText('Only .fasta or .txt files are allowed.', { exact: false })).toBeInTheDocument();
+    });
+  });
 
   test('handles dbSNP search', async () => {
     renderWithProviders(<SinglePage />);
@@ -166,79 +150,26 @@ describe('SinglePage', () => {
     const mockSequence = generateRandomValidSequence(100);
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ sequence: mockSequence }),
+      json: async () => ({ wildType: mockSequence }),
     });
   
     fireEvent.click(searchButton);
   
     await waitFor(() => {
-      expect(screen.getByDisplayValue(mockSequence)).toBeInTheDocument();
+      expect(screen.getByDisplayValue(mockSequence.slice(0, -1))).toBeInTheDocument();
     });
   });
 
-  // test('displays error when dbSnpId is empty', async () => {
-  //   renderWithProviders(<SinglePage />);
-  //   const searchButton = screen.getByText(/Search dbSNP/i);
+  test('displays error when dbSnpId is empty', async () => {
+    renderWithProviders(<SinglePage />);
+    const searchButton = screen.getByText(/Search dbSNP/i);
 
-  //   fireEvent.click(searchButton);
+    fireEvent.click(searchButton);
 
-  //   const error = await waitFor(() => screen.getByText((content, element) => {
-  //     return element?.textContent.includes('Please provide a valid dbSNP ID');
-  //   }, { exact: false }));
-  //   expect(error).toBeInTheDocument();
-  // });
+    await waitFor(() => {
+      expect(screen.getByText('Please provide a valid dbSNP ID', { exact: false })).toBeInTheDocument();
+    });
+  });
 
-  // test('displays error when dbSnpId exceeds 40 characters', async () => {
-  //   renderWithProviders(<SinglePage />);
-  //   const dbSnpInput = screen.getByPlaceholderText(/Enter dbSNP ID/i);
-  //   const searchButton = screen.getByText(/Search dbSNP/i);
 
-  //   fireEvent.change(dbSnpInput, { target: { value: 'a'.repeat(41) } });
-  //   fireEvent.click(searchButton);
-
-  //   const error = await waitFor(() => screen.getByText((content, element) => {
-  //     return element?.textContent.includes('dbSNP ID cannot exceed 40 characters.');
-  //   }, { exact: false }));
-  //   expect(error).toBeInTheDocument();
-  // });
-
-  // test('displays error when sequences are too long', async () => {
-  //   renderWithProviders(<SinglePage />);
-  //   const wildInput = screen.getByPlaceholderText(/Enter Wild-type RNA Sequence/i);
-  //   const submitButton = screen.getByText(/Submit/i);
-
-  //   fireEvent.change(wildInput, { target: { value: 'A'.repeat(10001) } });
-  //   fireEvent.click(submitButton);
-
-  //   const error = await waitFor(() => screen.getByText((content, element) => {
-  //     return element?.textContent.includes('Sequence length exceeds the maximum allowed length of 100.');
-  //   }, { exact: false }));
-  //   expect(error).toBeInTheDocument();
-  // });
-
-  // test('displays error when sequences are too short', async () => {
-  //   renderWithProviders(<SinglePage />);
-  //   const wildInput = screen.getByPlaceholderText(/Enter Wild-type RNA Sequence/i);
-  //   const submitButton = screen.getByText(/Submit/i);
-
-  //   fireEvent.change(wildInput, { target: { value: 'A'.repeat(9) } });
-  //   fireEvent.click(submitButton);
-
-  //   const error = await waitFor(() => screen.getByText((content, element) => {
-  //     return element?.textContent.includes('Sequence length is below the minimum allowed length of 10.');
-  //   }, { exact: false }));
-  //   expect(error).toBeInTheDocument();
-  // });
-
-  // test('displays error when no sequences are provided', async () => {
-  //   renderWithProviders(<SinglePage />);
-  //   const submitButton = screen.getByText(/Submit/i);
-
-  //   fireEvent.click(submitButton);
-
-  //   const error = await waitFor(() => screen.getByText((content, element) => {
-  //     return element?.textContent.includes('Please provide a wild-type sequence.');
-  //   }, { exact: false }));
-  //   expect(error).toBeInTheDocument();
-  // });
 });

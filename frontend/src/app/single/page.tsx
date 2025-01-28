@@ -14,7 +14,6 @@ const SinglePage = () => {
   const [error, setError] = useState("");
   const [fetchDbSnp, setFetchDbSnp] = useState(false);
   const [message, setMessage] = useState<string>("");
-  //const [analysisId, setAnalysisId] = useState<string>("");  
   const [progress, setProgress] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const router = useRouter();
@@ -215,7 +214,6 @@ const SinglePage = () => {
     e.preventDefault();
     setError("");
     setIsSubmitted(true);
-    //setAnalysisId(newAnalysisId);
     console.log("Generated UUID:", analysisId);
     if (!(wildSequence || fetchDbSnp)) {
       setError("Please provide a wild-type sequence.");
@@ -251,7 +249,6 @@ const SinglePage = () => {
       if (!response.ok) throw new Error("Failed to start analysis.");
 
       const responseData = await response.json();
-      //setAnalysisId(responseData.analysis_id);
       router.push(`/single/${responseData.analysis_id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
@@ -296,9 +293,9 @@ const SinglePage = () => {
           <div className="file-upload mb-5">
               <label
                 htmlFor="file-upload"
-                className="cursor-pointer bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
+                className="cursor-pointer bg-gray-300 text-black py-2 px-6 rounded-lg shadow-submit duration-300 hover:bg-gray-400 dark:bg-gray-400 dark:hover:bg-gray-500"
               >
-                Upload File
+                Upload Wild-Type Sequence File
               </label>
               <input
                 id="file-upload"
@@ -337,15 +334,15 @@ const SinglePage = () => {
             name="dbSnpId"
             placeholder="Enter dbSNP ID"
             aria-label="dbSNP ID"
-            className="dbsnp-id mb-4 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
+            className="dbsnp-id mb-2 w-full rounded-sm border px-6 py-3 text-base outline-none focus:border-primary bg-gray-100 text-black border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-transparent shadow-two"
             value={dbSnpId}
             onChange={(e) => handleDbSnpIdChange(e, setDbSnpId)}
             maxLength={41}
           />
-          <div className="flex flex-col space-y-4">
+          <div className="dbsnp-upload mb-5">
             <button
               type="button"
-              className="search-dbsnp mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-secondary/90 bg-green-500 hover:bg-green-600 dark:bg-green-700 dark:shadow-submit-dark"
+              className="cursor-pointer bg-gray-300 text-black py-2 px-6 rounded-lg shadow-submit duration-300 hover:bg-gray-400 dark:bg-gray-400 dark:hover:bg-gray-500"
               onClick={handleDbSnpSearch}
             >
               Search dbSNP

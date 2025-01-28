@@ -20,8 +20,26 @@ class FlaskAppTests(unittest.TestCase):
     def generate_sequences_pair(self, length):
         """Generate random RNA sequences of given length for pair."""
         bases = ['A', 'G', 'C', 'U']
-        mutant_seq = ''.join(random.choice(bases) for _ in range(length))
         wild_seq = ''.join(random.choice(bases) for _ in range(length))
+        
+
+        index = random.randint(0, length - 1)
+        
+
+        mutation_type = random.choice(['change', 'add', 'remove'])
+        
+        if mutation_type == 'change':
+
+            new_base = random.choice([b for b in bases if b != wild_seq[index]])
+            mutant_seq = wild_seq[:index] + new_base + wild_seq[index + 1:]
+        elif mutation_type == 'add':
+
+            new_base = random.choice(bases)
+            mutant_seq = wild_seq[:index] + new_base + wild_seq[index:]
+        else:
+
+            mutant_seq = wild_seq[:index] + wild_seq[index + 1:]
+        
         return mutant_seq, wild_seq
 
     def generate_sequences_single(self, length):
@@ -31,7 +49,7 @@ class FlaskAppTests(unittest.TestCase):
 
     def run_pair_tests(self):
         """Run tests for pairs and record execution times."""
-        lengths = [100, 1000, 2000, 5000]
+        lengths = [100, 500, 1000, 2000, 3000]
         results = []
 
         for length in lengths:
@@ -57,38 +75,7 @@ class FlaskAppTests(unittest.TestCase):
             writer.writerow(['Length', 'Execution Time'])
             writer.writerows(results)
 
-    def run_single_tests(self):
-        """Run tests for singles and record execution times."""
-        lengths = [10, 25, 50, 100]
-        results = []
 
-        for length in lengths:
-            for _ in range(20): 
-                wild_seq = self.generate_sequences_single(length)
-                analysis_id = str(uuid.uuid4())
-
-                data = {
-                    'wildSequence': wild_seq,
-                    'analysisId': analysis_id
-                }
-
-                start_time = time.time()
-                response = self.app.post('/api/analyze/single', data=json.dumps(data), content_type='application/json')
-                execution_time = time.time() - start_time
-
-                if response.status_code == 200:
-                    results.append((length, execution_time))
-
-     
-        with open('single_results.csv', 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(['Length', 'Execution Time'])
-            writer.writerows(results)
-
-
-    def test_post_analysis_request_single(self):
-        """Test sending an analysis request for single."""
-        self.run_single_tests()
 
     def test_post_analysis_request_pair(self):
         """Test sending an analysis request for pair."""

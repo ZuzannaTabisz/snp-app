@@ -6,8 +6,6 @@ CURRENT_DIR=$(pwd)
 SCRIPT_DIR=$(dirname "$0")
 
 function plot {
-    echo $1 $2
-    
 
     SEQ1=$(head -n 1 "$CURRENT_DIR/$1")
     SEQ2=$(head -n 1 "$CURRENT_DIR/$2")
@@ -32,7 +30,7 @@ function plot {
     fi
     
 
-    
+        #finding differences
         RNAplot --layout 4 --post "$("$SCRIPT_DIR/99-find-differences" "$CURRENT_DIR/$1" "$CURRENT_DIR/$2" | awk 'NR == 1')" < "$CURRENT_DIR/$1"
         
 
@@ -86,6 +84,7 @@ awk 'NR==2 {print $1}' mut-dotbracket.txt
 
 if [ "$wt_check" = true ] && [ "$mut_check" = true ]; then
 
+#finding domains
 "$SCRIPT_DIR/98-find-domains" "wt-dotbracket.txt" "mut-dotbracket.txt"
 
 

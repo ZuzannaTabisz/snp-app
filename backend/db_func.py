@@ -176,13 +176,13 @@ def save_to_table_tree_result(analysis_id, file_path, scenerio):
     if conn is None:
         return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
-    logger.debug(file_path)
+
     if scenerio == 1:
         cursor.execute(
             "INSERT INTO tree_result (id, task_id, tree_wt_url, tree_mut_url, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
             (id, analysis_id, 'empty', file_path, 'in_progress')
         )
-        logger.debug(f"INSERT INTO tree_result (id, task_id, tree_wt_url, tree_mut_url, created_at, processing_status) VALUES ({id}, {analysis_id}, 'empty', {file_path}, NOW(), 'in_progress')")
+
     if scenerio == 2:
         cursor.execute(
         "SELECT COUNT(*) FROM tree_result WHERE task_id = %s",
@@ -237,7 +237,7 @@ def save_to_table_rna_plot_result(analysis_id, file_path, scenerio):
             "INSERT INTO rna_plot_result (id, task_id, wild_type_url, mutant_url, created_at, processing_status) VALUES (%s, %s, %s, %s, NOW(), %s)",
             (id, analysis_id, 'empty', file_path, 'in_progress')
         )
-        logger.debug(f"INSERT INTO rna_plot_result (id, task_id, wild_type_url, mutant_url, created_at, processing_status) VALUES ({id}, {analysis_id}, 'empty', {file_path}, NOW(), 'in_progress')")
+
     if scenerio == 2:
         cursor.execute(
         "SELECT COUNT(*) FROM rna_plot_result WHERE task_id = %s",
@@ -287,7 +287,6 @@ def save_to_table_rna_fold_result(analysis_id, wild_type_dot_bracket, mutant_dot
         return ({"error": "Failed to connect to the database"}), 500
     cursor = conn.cursor()
     
-    logger.debug(f"INSERT INTO rna_fold_result (id, task_id, wild_type_dot_bracket, mutant_dot_bracket, wild_type_energy, mutant_energy, created_at, processing_status) VALUES ({id}, {analysis_id}, {wild_type_dot_bracket}, {mutant_dot_bracket}, {wild_type_energy}, {mutant_energy}, {processing_status})")
 
     if scenerio == 1:
         cursor.execute(
