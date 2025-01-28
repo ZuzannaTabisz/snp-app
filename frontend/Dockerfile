@@ -7,8 +7,8 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm ci && \
-    npm install socket.io-client uuid @types/socket.io-client @types/uuid
-
+    npm install socket.io-client uuid @types/socket.io-client @types/uuid && \
+    npm install --save seqalign
 # Copy source code
 COPY . .
 

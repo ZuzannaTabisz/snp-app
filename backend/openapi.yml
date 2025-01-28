@@ -1,66 +1,14 @@
 openapi: 3.1.0
 info:
-  title: API for SNP RNA Sequence Analysis
+  title: RNA Analysis API
   version: 1.0.0
-  description: API for RNA sequence analysis and retrieving results in TXT and SVG format.
+  description: API for RNA sequence analysis and retrieving results in SVG format.
 
 paths:
-  /api/analyze/two-sequence:
+  /api/analyze/pair:
     post:
-      summary: Submit analysis for wild type and mutant sequences
-      description: Submit a comparative analysis of RNA wild type and mutant sequences.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - type: object
-                  properties:
-                    sequence_wt:
-                      type: string
-                      description: RNA wild type (original) sequence.
-                    sequence_mt:
-                      type: string
-                      description: RNA mutant sequence.
-                  required:
-                    - sequence_wt
-                    - sequence_mut
-                - type: object
-                  properties:
-                    snp_id:
-                      type: string
-                      description: Optional SNP identifier.
-                  required:
-                    - snp_id
-      responses:
-        '200':
-          description: Analysis request accepted.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  analysis_id:
-                    type: string
-                    description: Unique analysis identifier.
-                  status:
-                    type: string
-                    description: Analysis status.
-                  url:
-                    type: string
-                    description: Link to analysis results.
-        '400':
-          description: Invalid input data.
-        '404':
-          description: SNP identifier not found in the database. (Only applicable if `snp_id` is provided)
-        '500':
-          description: Server error.
-
-  /api/analyze/one-sequence:
-    post:
-      summary: Submit analysis for a single sequence
-      description: Submit analysis for a single RNA sequence, analyzing possible SNPs.
+      summary: Request for comparative analysis of wild type and mutant sequences
+      description: Allows the user to request a comparative analysis of wild type and mutant RNA sequences.
       requestBody:
         required: true
         content:
@@ -68,11 +16,20 @@ paths:
             schema:
               type: object
               properties:
-                sequence:
+                wildSequence:
                   type: string
-                  description: RNA sequence for analysis.
+                  description: Wild type RNA sequence.
+                mutantSequence:
+                  type: string
+                  description: Mutant RNA sequence with SNP.
+                analysis_id:
+                  type: string
+                  format: uuid
+                  description: Unique analysis identifier.
               required:
-                - sequence
+                - wildSequence
+                - mutantSequence
+                - analysis_id
       responses:
         '200':
           description: Analysis request accepted.
@@ -83,32 +40,32 @@ paths:
                 properties:
                   analysis_id:
                     type: string
+                    format: uuid
                     description: Unique analysis identifier.
-                  status:
-                    type: string
-                    description: Analysis status.
-                  url:
-                    type: string
-                    description: Link to analysis results.
         '400':
           description: Invalid input data.
         '500':
-          description: Server error.
+          description: Server error while processing the analysis request.
 
-  /api/results/{analysis_id}:
-    get:
-      summary: Retrieve analysis results
-      description: Retrieve the analysis results for the given identifier.
-      parameters:
-        - name: analysis_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique analysis identifier.
+  /api/analyze/single:
+    post:
+      summary: Request for single sequence analysis
+      description: Request analysis for a single RNA sequence to identify possible SNPs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                wildSequence:
+                  type: string
+                  description: RNA sequence for analysis.
+              required:
+                - wildSequence
       responses:
         '200':
-          description: Analysis results retrieved.
+          description: Analysis request accepted.
           content:
             application/json:
               schema:
@@ -116,165 +73,101 @@ paths:
                 properties:
                   analysis_id:
                     type: string
+                    format: uuid
                     description: Unique analysis identifier.
-                  results:
-                    type: object
-                    properties:
-                      RNApdist:
-                        type: number
-                        description: RNApdist result.
-                      RNAdistance:
-                        type: object
-                        properties:
-                          f:
-                            type: number
-                          h:
-                            type: number
-                          w:
-                            type: number
-                          c:
-                            type: number
-                          F:
-                            type: number
-                          H:
-                            type: number
-                          W:
-                            type: number
-                          C:
-                            type: number
-                          P:
-                            type: number
-                      RNAfold:
-                        type: object
-                        properties:
-                          wt-dotbracket:
-                            type: string
-                          mut-dotbracket:
-                            type: string
-                      RNAplot:
-                        type: object
-                        properties:
-                          wt-svg:
-                            type: string
-                            description: Link to wild type SVG.
-                          mut-svg:
-                            type: string
-                            description: Link to mutant SVG.
-                      HIT tree:
-                        type: object
-                        properties:
-                          tree:
-                            type: string
-                            description: Link to HIT tree.
-                      SNP variants:
-                        type: object
-                        properties:
-                          variantsfile:
-                            type: string
-                            description: Link to SNP variants file.
-                      status:
-                        type: string
-                        description: Analysis status.
+        '400':
+          description: Invalid input data.
+        '500':
+          description: Server error while processing the analysis request.
+
+  /api/results/{analysis_id}:
+    get:
+      summary: Retrieve analysis results
+      description: Retrieve the analysis results for a given identifier.
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique analysis identifier.
+      responses:
+        '200':
+          description: Analysis results retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResults'
         '404':
           description: Analysis results not found.
         '500':
           description: Server error.
 
-  /api/results/{analysis_id}/download:
-    get:
-      summary: Download ZIP file of analysis results
-      description: Allows downloading a ZIP file containing the analysis results.
-      parameters:
-        - name: analysis_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique analysis identifier.
-      responses:
-        '200':
-          description: ZIP file downloaded.
-          content:
-            application/zip: {}
-        '404':
-          description: ZIP file not found.
-        '500':
-          description: Server error.
-
-  /api/results/{analysis_id}/hit-tree:
-    get:
-      summary: Download HIT tree in SVG format
-      description: Allows downloading the HIT tree in SVG format.
-      parameters:
-        - name: analysis_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique analysis identifier.
-      responses:
-        '200':
-          description: HIT tree downloaded.
-          content:
-            image/svg+xml: {}
-        '404':
-          description: HIT tree not found.
-        '500':
-          description: Server error.
-
-  /api/results/{analysis_id}/rna-plot-wt:
-    get:
-      summary: Download RNAplot for wild type
-      description: Allows downloading the RNAplot structure for the wild type sequence in SVG format.
-      parameters:
-        - name: analysis_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique analysis identifier.
-      responses:
-        '200':
-          description: Wild type structure downloaded.
-          content:
-            image/svg+xml: {}
-        '404':
-          description: RNAplot structure for wild type not found.
-        '500':
-          description: Server error.
-
-  /api/results/{analysis_id}/rna-plot-mut:
-    get:
-      summary: Download RNAplot for mutant
-      description: Allows downloading the RNAplot structure for the mutant sequence in SVG format.
-      parameters:
-        - name: analysis_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique analysis identifier.
-      responses:
-        '200':
-          description: Mutant structure downloaded.
-          content:
-            image/svg+xml: {}
-        '404':
-          description: RNAplot structure for mutant not found.
-        '500':
-          description: Server error.
-
 components:
   schemas:
-    Analysis:
+    AnalysisResults:
       type: object
       properties:
         analysis_id:
           type: string
+          format: uuid
           description: Unique analysis identifier.
-        status:
-          type: string
-          description: Analysis status.
-        url:
-          type: string
-          description: Link to analysis results.
+        results:
+          type: object
+          properties:
+            RNApdist:
+              type: number
+              description: RNApdist result.
+            RNAdistance:
+              type: object
+              properties:
+                f:
+                  type: number
+                h:
+                  type: number
+                w:
+                  type: number
+                c:
+                  type: number
+                F:
+                  type: number
+                H:
+                  type: number
+                W:
+                  type: number
+                C:
+                  type: number
+                P:
+                  type: number
+            RNAfold:
+              type: object
+              properties:
+                wt-dotbracket:
+                  type: string
+                mut-dotbracket:
+                  type: string
+            RNAplot:
+              type: object
+              properties:
+                wt-svg:
+                  type: string
+                  description: Link to the wild type SVG.
+                mut-svg:
+                  type: string
+                  description: Link to the mutant SVG.
+            HIT_tree:
+              type: object
+              properties:
+                tree:
+                  type: string
+                  description: Link to the HIT tree.
+            SNP_variants:
+              type: object
+              properties:
+                variantsfile:
+                  type: string
+                  description: Link to the SNP variants file.
+            status:
+              type: string
+              description: Analysis status.

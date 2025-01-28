@@ -1,4 +1,3 @@
-// __tests__/Hero.test.tsx
 import { render } from '@testing-library/react';
 import Hero from './index';
 import '@testing-library/jest-dom';
