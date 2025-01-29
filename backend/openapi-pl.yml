@@ -80,9 +80,9 @@ paths:
         '500':
           description: Błąd serwera podczas zlecania analizy.
 
-  /api/results/{analysis_id}:
+  /api/results/pair/{analysis_id}:
     get:
-      summary: Pobranie wyników analizy
+      summary: Pobranie wyników analizy porównania dwóch sekwencji
       description: Pobranie wyników analizy dla danego identyfikatora.
       parameters:
         - name: analysis_id
@@ -162,7 +162,46 @@ components:
                 tree:
                   type: string
                   description: Link do drzewa HIT.
-            SNP_variants:
+            status:
+              type: string
+              description: Status analizy.
+              
+  /api/results/single/{analysis_id}:
+    get:
+      summary: Pobranie wyników analizy wszytskich możliwych mutacji jednej sekwencji
+      description: Pobranie wyników analizy dla danego identyfikatora.
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unikalny identyfikator analizy.
+      responses:
+        '200':
+          description: Wyniki analizy pobrane.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResults'
+        '404':
+          description: Wyniki analizy nie znalezione.
+        '500':
+          description: Błąd serwera.
+components:
+  schemas:
+    AnalysisResults:
+      type: object
+      properties:
+        analysis_id:
+          type: string
+          format: uuid
+          description: Unikalny identyfikator analizy.
+        results:
+          type: object
+          properties:
+              SNP_variants:
               type: object
               properties:
                 variantsfile:
