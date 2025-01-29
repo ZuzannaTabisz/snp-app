@@ -7,8 +7,8 @@ info:
 paths:
   /api/analyze/pair:
     post:
-      summary: Request for comparative analysis of wild type and mutant sequences
-      description: Allows the user to request a comparative analysis of wild type and mutant RNA sequences.
+      summary: Request comparative analysis of wild-type and mutant sequences
+      description: Allows the user to request a comparative analysis of wild-type and mutant RNA sequences.
       requestBody:
         required: true
         content:
@@ -18,10 +18,10 @@ paths:
               properties:
                 wildSequence:
                   type: string
-                  description: Wild type RNA sequence.
+                  description: Wild-type RNA sequence.
                 mutantSequence:
                   type: string
-                  description: Mutant RNA sequence with SNP.
+                  description: RNA sequence with SNP.
                 analysis_id:
                   type: string
                   format: uuid
@@ -49,8 +49,8 @@ paths:
 
   /api/analyze/single:
     post:
-      summary: Request for single sequence analysis
-      description: Request analysis for a single RNA sequence to identify possible SNPs.
+      summary: Request analysis of a single sequence
+      description: Request an analysis for a single RNA sequence, identifying possible SNPs.
       requestBody:
         required: true
         content:
@@ -60,7 +60,7 @@ paths:
               properties:
                 wildSequence:
                   type: string
-                  description: RNA sequence for analysis.
+                  description: RNA sequence to be analyzed.
               required:
                 - wildSequence
       responses:
@@ -80,10 +80,10 @@ paths:
         '500':
           description: Server error while processing the analysis request.
 
-  /api/results/{analysis_id}:
+  /api/results/pair/{analysis_id}:
     get:
-      summary: Retrieve analysis results
-      description: Retrieve the analysis results for a given identifier.
+      summary: Retrieve results of the comparative analysis of two sequences
+      description: Retrieve the analysis results for the given identifier.
       parameters:
         - name: analysis_id
           in: path
@@ -94,7 +94,31 @@ paths:
           description: Unique analysis identifier.
       responses:
         '200':
-          description: Analysis results retrieved successfully.
+          description: Analysis results retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResults'
+        '404':
+          description: Analysis results not found.
+        '500':
+          description: Server error.
+
+  /api/results/single/{analysis_id}:
+    get:
+      summary: Retrieve results of all possible mutations for a single sequence
+      description: Retrieve the analysis results for the given identifier.
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique analysis identifier.
+      responses:
+        '200':
+          description: Analysis results retrieved.
           content:
             application/json:
               schema:
@@ -152,22 +176,22 @@ components:
               properties:
                 wt-svg:
                   type: string
-                  description: Link to the wild type SVG.
+                  description: Path to the wild-type SVG.
                 mut-svg:
                   type: string
-                  description: Link to the mutant SVG.
+                  description: Path to the mutant SVG.
             HIT_tree:
               type: object
               properties:
                 tree:
                   type: string
-                  description: Link to the HIT tree.
+                  description: Path to the HIT tree.
             SNP_variants:
               type: object
               properties:
                 variantsfile:
                   type: string
-                  description: Link to the SNP variants file.
+                  description: Path to the SNP variants file.
             status:
               type: string
               description: Analysis status.
