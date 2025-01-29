@@ -8,7 +8,7 @@ const AboutPage = () => {
 
   const paragraphs = [
     "SNPsniper is a bioinformatics web application designed to analyze the impact of single nucleotide polymorphisms (SNPs) on RNA secondary structures. This tool facilitates the comparison of wild-type and mutant RNA sequences, as well as the identification of the most significant SNPs in a given sequence.",
-    "This application was created as part of an engineering thesis of students of the Poznan University of Technology, majoring in bioinformatics. It is the culmination of research and development efforts to provide researchers with an accessible, user-friendly platform for SNP analysis.",
+    "This application was created as part of an engineering thesis of students of the Poznan University of Technology, majoring in bioinformatics. The team consisted of: Anna Michalak, Katarzyna Piechowiak, Igor Swiatek and Zuzanna Tabisz, under the supervision of Prof. Tomasz Zok. It is the culmination of research and development efforts to provide researchers with an accessible, user-friendly platform for SNP analysis.",
     "The project incorporates advanced tools from the ViennaRNA package to ensure accurate and reliable analysis, while also leveraging modern web technologies like Next.js for a seamless user experience.",
     "We hope that SNPsniper will serve as a valuable resource for researchers and students interested in exploring the impact of SNPs on RNA structures.",
   ];
