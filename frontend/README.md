@@ -27,9 +27,6 @@ and Much More ...
 | Email Support       | ❌ No         | ✅ Yes       |
 | Community Support         | ✅ Yes         | ✅ Yes       |
 
-
-[![Startup Pro](https://raw.githubusercontent.com/NextJSTemplates/startup-nextjs/main/startup-pro.webp)](https://nextjstemplates.com/templates/saas-starter-startup)
-
 Startup Pro - Expertly crafted for fully-functional, high-performing SaaS startup websites. Comes with with Authentication, Database, Blog, and all the essential integrations necessary for SaaS business sites.
 
 
