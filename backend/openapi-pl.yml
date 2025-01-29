@@ -152,16 +152,16 @@ components:
               properties:
                 wt-svg:
                   type: string
-                  description: Link do SVG wild type.
+                  description: Ścieżka do SVG wild type.
                 mut-svg:
                   type: string
-                  description: Link do SVG mutant.
+                  description: Ścieżka do SVG mutant.
             HIT_tree:
               type: object
               properties:
                 tree:
                   type: string
-                  description: Link do drzewa HIT.
+                  description: Ścieżka do drzewa HIT.
             status:
               type: string
               description: Status analizy.
@@ -206,7 +206,7 @@ components:
               properties:
                 variantsfile:
                   type: string
-                  description: Link do pliku z wariantami SNP.
+                  description: Ścieżka do pliku z wariantami SNP.
             status:
               type: string
               description: Status analizy.
