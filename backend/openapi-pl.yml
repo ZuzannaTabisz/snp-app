@@ -2,13 +2,13 @@ openapi: 3.1.0
 info:
   title: RNA Analysis API
   version: 1.0.0
-  description: API do analizy sekwencji RNA oraz pobierania wyników w formacie SVG.
+  description: API for RNA sequence analysis and retrieving results in SVG format.
 
 paths:
   /api/analyze/pair:
     post:
-      summary: Zlecenie analizy porównawczej sekwencji wild type i mutant
-      description: Umożliwia użytkownikowi zlecenie analizy porównawczej sekwencji wild type i mutant.
+      summary: Request comparative analysis of wild-type and mutant sequences
+      description: Allows the user to request a comparative analysis of wild-type and mutant RNA sequences.
       requestBody:
         required: true
         content:
@@ -18,21 +18,21 @@ paths:
               properties:
                 wildSequence:
                   type: string
-                  description: Sekwencja RNA typu dzikiego.
+                  description: Wild-type RNA sequence.
                 mutantSequence:
                   type: string
-                  description: Sekwencja RNA z SNP.
+                  description: RNA sequence with SNP.
                 analysis_id:
                   type: string
                   format: uuid
-                  description: Unikalny identyfikator analizy.
+                  description: Unique analysis identifier.
               required:
                 - wildSequence
                 - mutantSequence
                 - analysis_id
       responses:
         '200':
-          description: Zlecenie analizy przyjęte.
+          description: Analysis request accepted.
           content:
             application/json:
               schema:
@@ -41,16 +41,16 @@ paths:
                   analysis_id:
                     type: string
                     format: uuid
-                    description: Unikalny identyfikator analizy.
+                    description: Unique analysis identifier.
         '400':
-          description: Błędne dane wejściowe.
+          description: Invalid input data.
         '500':
-          description: Błąd serwera podczas zlecania analizy.
+          description: Server error while processing the analysis request.
 
   /api/analyze/single:
     post:
-      summary: Zlecenie analizy pojedynczej sekwencji
-      description: Zlecenie analizy dla pojedynczej sekwencji RNA, analizującej możliwe SNP.
+      summary: Request analysis of a single sequence
+      description: Request an analysis for a single RNA sequence, identifying possible SNPs.
       requestBody:
         required: true
         content:
@@ -60,12 +60,12 @@ paths:
               properties:
                 wildSequence:
                   type: string
-                  description: Sekwencja RNA do analizy.
+                  description: RNA sequence to be analyzed.
               required:
                 - wildSequence
       responses:
         '200':
-          description: Zlecenie analizy przyjęte.
+          description: Analysis request accepted.
           content:
             application/json:
               schema:
@@ -74,16 +74,16 @@ paths:
                   analysis_id:
                     type: string
                     format: uuid
-                    description: Unikalny identyfikator analizy.
+                    description: Unique analysis identifier.
         '400':
-          description: Błędne dane wejściowe.
+          description: Invalid input data.
         '500':
-          description: Błąd serwera podczas zlecania analizy.
+          description: Server error while processing the analysis request.
 
   /api/results/pair/{analysis_id}:
     get:
-      summary: Pobranie wyników analizy porównania dwóch sekwencji
-      description: Pobranie wyników analizy dla danego identyfikatora.
+      summary: Retrieve results of the comparative analysis of two sequences
+      description: Retrieve the analysis results for the given identifier.
       parameters:
         - name: analysis_id
           in: path
@@ -91,18 +91,42 @@ paths:
           schema:
             type: string
             format: uuid
-          description: Unikalny identyfikator analizy.
+          description: Unique analysis identifier.
       responses:
         '200':
-          description: Wyniki analizy pobrane.
+          description: Analysis results retrieved.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AnalysisResults'
         '404':
-          description: Wyniki analizy nie znalezione.
+          description: Analysis results not found.
         '500':
-          description: Błąd serwera.
+          description: Server error.
+
+  /api/results/single/{analysis_id}:
+    get:
+      summary: Retrieve results of all possible mutations for a single sequence
+      description: Retrieve the analysis results for the given identifier.
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique analysis identifier.
+      responses:
+        '200':
+          description: Analysis results retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResults'
+        '404':
+          description: Analysis results not found.
+        '500':
+          description: Server error.
 
 components:
   schemas:
@@ -112,13 +136,13 @@ components:
         analysis_id:
           type: string
           format: uuid
-          description: Unikalny identyfikator analizy.
+          description: Unique analysis identifier.
         results:
           type: object
           properties:
             RNApdist:
               type: number
-              description: Wynik RNApdist.
+              description: RNApdist result.
             RNAdistance:
               type: object
               properties:
@@ -152,61 +176,22 @@ components:
               properties:
                 wt-svg:
                   type: string
-                  description: Ścieżka do SVG wild type.
+                  description: Path to the wild-type SVG.
                 mut-svg:
                   type: string
-                  description: Ścieżka do SVG mutant.
+                  description: Path to the mutant SVG.
             HIT_tree:
               type: object
               properties:
                 tree:
                   type: string
-                  description: Ścieżka do drzewa HIT.
-            status:
-              type: string
-              description: Status analizy.
-              
-  /api/results/single/{analysis_id}:
-    get:
-      summary: Pobranie wyników analizy wszytskich możliwych mutacji jednej sekwencji
-      description: Pobranie wyników analizy dla danego identyfikatora.
-      parameters:
-        - name: analysis_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Unikalny identyfikator analizy.
-      responses:
-        '200':
-          description: Wyniki analizy pobrane.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnalysisResults'
-        '404':
-          description: Wyniki analizy nie znalezione.
-        '500':
-          description: Błąd serwera.
-components:
-  schemas:
-    AnalysisResults:
-      type: object
-      properties:
-        analysis_id:
-          type: string
-          format: uuid
-          description: Unikalny identyfikator analizy.
-        results:
-          type: object
-          properties:
-              SNP_variants:
+                  description: Path to the HIT tree.
+            SNP_variants:
               type: object
               properties:
                 variantsfile:
                   type: string
-                  description: Ścieżka do pliku z wariantami SNP.
+                  description: Path to the SNP variants file.
             status:
               type: string
-              description: Status analizy.
+              description: Analysis status.
