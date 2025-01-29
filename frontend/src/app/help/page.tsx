@@ -59,7 +59,7 @@ const HelpPage = () => {
             <li>
               <strong>SNP Analysis:</strong> Analyze all possible SNPs in a wild-type sequence. This mode identifies the 10 mutations with the most significant structural impact, ranked by their Z-score values.
               <p className="mt-2 text-red-600">
-                <strong>Note:</strong> SNP Analysis supports sequences with a length between 10 and 100 nucleotides.
+                <strong>Note:</strong>  Comparative analysis supports sequences above 10 to 2000 nucleotides. SNP analysis supports sequences of up to 100.
               </p>
             </li>
           </ul>
