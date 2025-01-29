@@ -43,10 +43,10 @@ channels:
               type: string
               description: Link to analysis results.
   analyzeOneSequence:
-    address: /api/analyze/one-sequence
+    address: /api/analyze/single
     messages:
       analyzeOneSequenceRequest:
-        name: AnalyzeOneSequenceRequest
+        name: AnalyzeSingleRequest
         payload:
           type: object
           properties:
@@ -54,7 +54,7 @@ channels:
               type: string
               description: RNA sequence for analysis.
       analyzeOneSequenceResponse:
-        name: AnalyzeOneSequenceResponse
+        name: AnalyzeSingleResponse
         payload:
           type: object
           properties:
@@ -101,7 +101,7 @@ channels:
               type: number
               description: Analysis progress in percentage.
   getResults:
-    address: /api/results/{analysis_id}
+    address: /api/results/pair/{analysis_id}
     messages:
       getResultsRequest:
         name: GetResultsRequest
@@ -171,16 +171,7 @@ channels:
                   properties:
                     tree:
                       type: string
-                      description: Link to HIT tree visualization on SVG format.
-                SNP_variants:
-                  type: object
-                  properties:
-                    variantsfile:
-                      type: string
-                      description: Link to download SNP variants file.
-                status:
-                  type: string
-                  description: Current analysis status.
+                      description: Link to HIT tree visualization in SVG format.
   downloadZip:
     address: /api/results/{analysis_id}/zip-download
     messages:
@@ -198,11 +189,11 @@ channels:
         payload:
           type: string
           description: Zip file containing all analysis results.
-  hitTree:
-    address: /api/results/{analysis_id}/hit-tree
+  hitTreeWt:
+    address: /api/results/{analysis_id}/hit-tree-wt
     messages:
-      hitTreeRequest:
-        name: HitTreeRequest
+      hitTreeWtRequest:
+        name: HitTreeWtRequest
         payload:
           type: object
           properties:
@@ -210,11 +201,28 @@ channels:
               type: string
               format: uuid
               description: Unique analysis identifier (UUID).
-      hitTreeResponse:
-        name: HitTreeResponse
+      hitTreeWtResponse:
+        name: HitTreeWtResponse
         payload:
           type: string
-          description: SVG visualization of the HIT tree.
+          description: SVG visualization of the wild-type HIT tree.
+  hitTreeMut:
+    address: /api/results/{analysis_id}/hit-tree-mut
+    messages:
+      hitTreeMutRequest:
+        name: HitTreeMutRequest
+        payload:
+          type: object
+          properties:
+            analysis_id:
+              type: string
+              format: uuid
+              description: Unique analysis identifier (UUID).
+      hitTreeMutResponse:
+        name: HitTreeMutResponse
+        payload:
+          type: string
+          description: SVG visualization of the mutant HIT tree.
   rnaPlotWildType:
     address: /api/results/{analysis_id}/rna-plot-wt
     messages:
