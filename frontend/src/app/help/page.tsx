@@ -41,7 +41,7 @@ const HelpPage = () => {
               <strong>Manual Input:</strong> Directly type or paste the RNA sequence into the input field provided.
             </li>
             <li>
-              <strong>dbSNP Identifier:</strong> Enter an SNP ID (e.g., rs123456) to fetch relevant sequences from the dbSNP database.
+              <strong>dbSNP Identifier:</strong> Enter an SNP ID (e.g., rs6339, rs328, rs268) to fetch relevant sequences from the dbSNP database.
             </li>
           </ul>
           <p>
