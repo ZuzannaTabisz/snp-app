@@ -584,7 +584,7 @@ def get_dbSNP(dbSnpId):
     if rs_num != dbSnpId:
         return jsonify({"error": "SNP ID mismatch"}), 400
 
-
+    alleles = alleles.split(",")
     alleles = alleles[0].split("/")
     if len(alleles) != 2 or any(len(allele) != 1 for allele in alleles):
         return jsonify({"error": "Invalid alleles data"}), 400
