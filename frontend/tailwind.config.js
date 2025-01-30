@@ -39,10 +39,10 @@ module.exports = {
         transparent: "transparent",
         white: "#FFFFFF",
         black: "#121723",
-        dark: "#151d2e",
+        dark: "#1D2430",
         primary: "rgb(226, 19, 64)",
         yellow: "#FBB040",
-        "bg-color-dark": "#151d2e",
+        "bg-color-dark": "#171C28",
         "body-color": {
           DEFAULT: "#788293",
           dark: "#959CB1",
@@ -53,7 +53,7 @@ module.exports = {
         },
         gray: {
           ...colors.gray,
-          dark: "#151d2e",
+          dark: "#1E232E",
           light: "#F0F2F9",
         },
       },
