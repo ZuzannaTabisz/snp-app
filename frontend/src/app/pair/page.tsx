@@ -328,15 +328,15 @@ const PairPage = () => {
               onChange={(e) => handleInputChange(e, setWildSequence)}
             />
           </div>
-          <div className="file-upload mb-5">
+          <div className="wild-file-upload mb-5">
               <label
-                htmlFor="file-upload"
+                htmlFor="wild-file-upload"
                 className="cursor-pointer bg-gray-300 text-black py-2 px-6 rounded-lg shadow-submit duration-300 hover:bg-gray-400 dark:bg-gray-400 dark:hover:bg-gray-500"
               >
                 Upload Wild-Type Sequence File
               </label>
               <input
-                id="file-upload"
+                id="wild-file-upload"
                 type="file"
                 accept=".fasta,.txt"
                 lang="en"
@@ -356,15 +356,15 @@ const PairPage = () => {
               onChange={(e) => handleInputChange(e, setMutantSequence)}
             />
           </div>
-          <div className="file-upload mb-5">
+          <div className="mut-file-upload mb-5">
               <label
-                htmlFor="file-upload"
+                htmlFor="mut-file-upload"
                 className="cursor-pointer bg-gray-300 text-black py-2 px-6 rounded-lg shadow-submit duration-300 hover:bg-gray-400 dark:bg-gray-400 dark:hover:bg-gray-500"
               >
                  Upload Mutant Sequence File 
               </label>
               <input
-                id="file-upload"
+                id="mut-file-upload"
                 type="file"
                 accept=".fasta,.txt"
                 lang="en"
