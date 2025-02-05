@@ -57,7 +57,7 @@ const HelpPage = () => {
               <strong>Comparative Analysis:</strong> Compare a wild-type sequence with a mutant sequence. The system highlights structural differences, including base pair changes and secondary structure modifications.
             </li>
             <li>
-              <strong>SNP Analysis:</strong> Analyze all possible SNPs in a wild-type sequence. This mode identifies the 10 mutations with the most significant structural impact, ranked by their Z-score values.
+              <strong>SNP Analysis:</strong> Analyze all possible SNPs in a wild-type sequence. This mode identifies the 10 mutations with the most significant structural impact, ranked by their Z-score values. You can easily transition from SNP analysis to comparative analysis by clicking on a row corresponding to a specific mutation from the top 10 identified SNPs. 
               <p className="mt-2 text-red-600">
                 <strong>Note:</strong>  Comparative analysis supports sequences above 10 to 2000 nucleotides. SNP analysis supports sequences of up to 100.
               </p>
@@ -91,7 +91,7 @@ const HelpPage = () => {
             After the analysis is complete, the results page provides comprehensive insights:
           </p>
           <ul className="list-disc ml-6">
-            <li><strong>Visualizations:</strong> Graphical comparisons of wild-type and mutant RNA secondary structures, with changes highlighted in red and blue.</li>
+            <li><strong>Visualizations:</strong> Graphical comparisons of wild-type and mutant RNA secondary structures, with structural changes highlighted in red and blue. The SNP nucleotide is highlighted in pink. You can click the image to view it in a new tab for a closer look.</li>
             <li>
               <strong>Data:</strong> Tables showing RNApdist, RNAdistance, and Z-score values, including a ranked list of the 10 most impactful SNPs.
             </li>
